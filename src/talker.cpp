@@ -9,6 +9,7 @@
 using std::vector;
 using std::string;
 
+#define TOPIC_COUNT 6
 
 int main(int argc, char **argv)
 {
@@ -18,7 +19,7 @@ int main(int argc, char **argv)
   ros::NodeHandle n;
 
   // Total topic count
-  size_t topic_count = 6;
+  size_t topic_count = TOPIC_COUNT;
   // Topic names
   vector<string> topic_names;
   for (size_t i=0; i < topic_count; ++i){
@@ -38,8 +39,8 @@ int main(int argc, char **argv)
 
 
 
-
-  ros::Rate loop_rate(2); // 2
+  double _loop_rate = 5.0; // 10.0; // 2.0
+  ros::Rate loop_rate_obj(_loop_rate);
   int count = 0;
   while (ros::ok())
   {
@@ -60,7 +61,7 @@ int main(int argc, char **argv)
     // SpinOnce
     ros::spinOnce();
 
-    loop_rate.sleep();
+    loop_rate_obj.sleep();
     ++count;
   }
 

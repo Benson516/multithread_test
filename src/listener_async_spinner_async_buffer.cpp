@@ -21,11 +21,15 @@ using std::vector;
 using std::string;
 
 
+// test
+#define __BLOCK_TOPIC_5__
+
+
 #define TOPIC_COUNT 6
 
 
 // async_buffer
-size_t buffer_size = 10;
+size_t buffer_size = 10; // 10
 // async_buffer<string> buffer_1(buffer_size);
 vector< async_buffer<string> > async_buffer_list(TOPIC_COUNT, async_buffer<string>(buffer_size) );
 
@@ -40,10 +44,12 @@ void chatter_0_CB(const std_msgs::String::ConstPtr& msg)
 //
 void chatter_prototype_CB(const std_msgs::String::ConstPtr& msg, string _topic_name, size_t _topic_id)
 {
-    if (_topic_name.compare(string("chatter_5")) == 0){
-        ros::Duration(1.2).sleep();
-        // std::this_thread::sleep_for( std::chrono::milliseconds(1200) );
-    }
+    #ifdef __BLOCK_TOPIC_5__
+        if (_topic_name.compare(string("chatter_5")) == 0){
+            ros::Duration(1.2).sleep();
+            // std::this_thread::sleep_for( std::chrono::milliseconds(1200) );
+        }
+    #endif
     /*
     if (_topic_name.compare(string("chatter_1")) == 0){
         string _tmp_s;
@@ -65,7 +71,7 @@ void chatter_prototype_CB(const std_msgs::String::ConstPtr& msg, string _topic_n
 //
 bool test_copy_func(string &target, const string& source){
     target = source;
-    target += " <<>>";
+    target += " ha!!";
     return true;
 }
 
@@ -115,13 +121,21 @@ int main(int argc, char **argv)
 
 
 
-  ros::AsyncSpinner spinner(12); // Use ? threads
+  ros::AsyncSpinner spinner(6); // Use ? threads
   spinner.start();
 
+  //
+  string key_word = "count = ";
+  vector<int> count_in_msg_list(TOPIC_COUNT, 0);
+  //
+
+
+
+
   // ros::waitForShutdown();
-  double loo_rate = 1.0;
-  long long loop_time_ms = (long long)(1000.0/loo_rate); // 1 sec.
-  ros::Rate loop_rate( 1000.0/float(loop_time_ms) ); // Hz
+  double _loop_rate = 2.0; //1.0;
+  long long loop_time_ms = (long long)(1000.0/_loop_rate); // 1 sec.
+  ros::Rate loop_rate_obj( 1000.0/float(loop_time_ms) ); // Hz
   //
   auto start_old = std::chrono::high_resolution_clock::now();;
   while (ros::ok()){
@@ -147,17 +161,28 @@ int main(int argc, char **argv)
       */
 
       for (size_t i=0; i < topic_names.size(); ++i){
-          std::pair<string,bool> _result_pair = async_buffer_list[i].front();
+          std::cout << topic_names[i] << ": ";
+          std::cout << "(pre)buff_size = " << async_buffer_list[i].size_est() << " ";
+          std::pair<string,bool> _result_pair = async_buffer_list[i].front(true);
           if (_result_pair.second){
-              std::cout << topic_names[i] << ": ";
-              std::cout << "buffer_size = " << async_buffer_list[i].size_est() << " ";
-              std::cout << "msg:<" << _result_pair.first << ">\t";
-              std::cout << "pop: " << async_buffer_list[i].pop();
-              std::cout << "\n";
+              // std::cout << "(post)buff_size = " << async_buffer_list[i].size_est() << " ";
+              std::cout << "\tmsg: <" << _result_pair.first << ">\t";
+              // std::cout << "pop: " << async_buffer_list[i].pop();
+
+              // Check for counts
+              size_t idx_key = _result_pair.first.rfind(key_word);
+              int count = std::stoi(_result_pair.first.substr(idx_key+8), 0);
+              // std::cout << "count = " << count;
+              int count_increment = count - count_in_msg_list[i];
+              if ( count_increment != 1 ){
+                  std::cout << "\tlost " << (count_increment-1) << " counts";
+              }
+              count_in_msg_list[i] = count;
+              //
           }else{
-              std::cout << topic_names[i] << ": ";
-              std::cout << "empty\n";
+              std::cout << "\tempty";
           }
+          std::cout << "\n";
       }
 
       //=============================================================//
@@ -176,7 +201,7 @@ int main(int argc, char **argv)
 
 
       //
-      loop_rate.sleep();
+      loop_rate_obj.sleep();
   }
 
 
