@@ -28,11 +28,43 @@ using std::string;
 #define TOPIC_COUNT 6
 
 
+// test of constructors
+/*
+class no_empty_constructor_class{
+public:
+    int _A;
+
+    // no_empty_constructor_class(){
+    //     std::cout << "Inner constructor 1\n";
+    // }
+    no_empty_constructor_class(int _A_in):
+        _A(_A_in)
+    {
+        std::cout << "Inner constructor 2\n";
+    }
+
+};
+template <class _T>
+class a_class_with_two_constructors{
+public:
+    _T _A;
+    a_class_with_two_constructors()
+    {
+        std::cout << "Constructor 1\n";
+    }
+    a_class_with_two_constructors(_T _A_in):
+        _A(_A_in)
+    {
+        std::cout << "Constructor 2\n";
+    }
+};
+a_class_with_two_constructors<no_empty_constructor_class> test_A(no_empty_constructor_class(6));
+*/
+
 // async_buffer
 size_t buffer_size = 10; // 10
 // async_buffer<string> buffer_1(buffer_size);
 vector< async_buffer<string> > async_buffer_list(TOPIC_COUNT, async_buffer<string>(buffer_size) );
-
 //
 
 
@@ -86,6 +118,7 @@ int main(int argc, char **argv)
 
   // Handle with default namespace
   ros::NodeHandle n;
+
 
   // Total topic count
   size_t topic_count = TOPIC_COUNT;
