@@ -13,6 +13,8 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   message_generation
+  pcl_conversions
+  pcl_ros
 )
 
 ## System dependencies are found with CMake's conventions
@@ -125,9 +127,15 @@ catkin_package(
 include_directories(
   # include
   ${catkin_INCLUDE_DIRS}
+  ${PCL_INCLUDE_DIRS}
   include/async_buffer/
+  include/ROS_interface/
+  include/ROS_interface/include
   .
 )
+
+link_directories(${PCL_LIBRARY_DIRS})
+add_definitions(${PCL_DEFINITIONS})
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
@@ -208,9 +216,12 @@ include_directories(
 # catkin_add_nosetests(test)
 
 
-
-# add_library (async_buffer STATIC include/async_buffer/async_buffer.cpp) 
+# Libraries
+add_library (async_buffer STATIC include/async_buffer/async_buffer.cpp) 
 # target_link_libraries(async_buffer ${ALL_LIBS}  ) 
+
+add_library (ROS_interface STATIC include/ROS_interface/ROS_interface.cpp) 
+target_link_libraries(ROS_interface async_buffer) 
 
 
 add_executable(talker src/talker.cpp)
@@ -222,9 +233,9 @@ target_link_libraries(listener ${catkin_LIBRARIES})
 add_executable(listener_async_spinner src/listener_async_spinner.cpp)
 target_link_libraries(listener_async_spinner ${catkin_LIBRARIES})
 
-# add_executable(listener_async_spinner_async_buffer src/listener_async_spinner_async_buffer.cpp include/async_buffer/async_buffer.cpp)
-# target_link_libraries(listener_async_spinner_async_buffer ${catkin_LIBRARIES} async_buffer)
-
 add_executable(listener_async_spinner_async_buffer src/listener_async_spinner_async_buffer.cpp )
-target_link_libraries(listener_async_spinner_async_buffer ${catkin_LIBRARIES} )
+target_link_libraries(listener_async_spinner_async_buffer ${catkin_LIBRARIES} async_buffer)
+
+# add_executable(listener_async_spinner_async_buffer src/listener_async_spinner_async_buffer.cpp )
+# target_link_libraries(listener_async_spinner_async_buffer ${catkin_LIBRARIES} )
 

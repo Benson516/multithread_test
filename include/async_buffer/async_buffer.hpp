@@ -2,7 +2,7 @@
 #define ASYNC_BUFFER_H
 
 // Determine if we are going to preint some debug information to std_out
-#define __DEGUG__
+// #define __DEGUG__
 
 /*
 This is a class that implement a single-producer-single-consumer (SPSC) queue.
@@ -11,7 +11,10 @@ The implementation of this queue is based on a circular buffer using fixed-lengt
 */
 
 //
-#include <iostream>
+#ifdef __DEGUG__
+    #include <iostream> //
+#endif
+#include <memory> // <-- this is for std::shared_ptr
 #include <vector>
 #include <utility> // std::pair, std::make_pair
 #include <mutex>
