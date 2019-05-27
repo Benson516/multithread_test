@@ -9,6 +9,17 @@
 #define ALL_HEADER_H_
 
 
+// ROS libraries
+//--------------------------------------------//
+#include <ros/ros.h>
+// MSG: string
+#include <std_msgs/String.h>
+
+// MSG: Image
+#include <image_transport/image_transport.h>
+#include <cv_bridge/cv_bridge.h>
+#include <sensor_msgs/image_encodings.h>
+//--------------------------------------------//
 
 // Core libraries
 #include <string>
@@ -17,6 +28,7 @@
 #include <utility> // std::pair, std::make_pair
 // #include <mutex>   // mutex lock
 #include <thread>
+#include <chrono>
 
 // Others usefull libraries
 #include <sstream>
@@ -33,17 +45,7 @@
 
 
 
-// ROS libraries
-//--------------------------------------------//
-#include <ros/ros.h>
-// MSG: string
-#include <std_msgs/String.h>
 
-// MSG: Image
-#include <image_transport/image_transport.h>
-#include <cv_bridge/cv_bridge.h>
-#include <sensor_msgs/image_encodings.h>
-//--------------------------------------------//
 
 
 

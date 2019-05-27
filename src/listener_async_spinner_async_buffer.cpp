@@ -167,7 +167,7 @@ int main(int argc, char **argv)
 
   // ros::waitForShutdown();
   double _loop_rate = 2.0; //1.0;
-  long long loop_time_ms = (long long)(1000.0/_loop_rate); // 1 sec.
+  long long loop_time_ms = (long long)(1000.0/_loop_rate); // ms
   ros::Rate loop_rate_obj( 1000.0/float(loop_time_ms) ); // Hz
   //
   auto start_old = std::chrono::high_resolution_clock::now();;

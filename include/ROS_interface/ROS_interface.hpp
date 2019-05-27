@@ -16,6 +16,7 @@
 //-----------------------------------------//
 // List the topic tokens in sequence wuth the same order as the topic names in topics name list
 /*
+// nickname for topic_id
 enum class MSG_ID{
     chatter_0,
     chatter_1,
@@ -29,9 +30,9 @@ ROS_INTERFACE ros_interface;
 // Method 1:
 {
     using MSG::M_TYPE;
-    ros_interface.add_a_topic("/chatter_0", M_TYPE::String, true, 10);
-    ros_interface.add_a_topic("/chatter_1", M_TYPE::String, true, 10);
-    ros_interface.add_a_topic("/chatter_2", M_TYPE::String, true, 10);
+    ros_interface.add_a_topic("/chatter_0", M_TYPE::String, true, 10, 10);
+    ros_interface.add_a_topic("/chatter_1", M_TYPE::String, true, 10, 10);
+    ros_interface.add_a_topic("/chatter_2", M_TYPE::String, true, 10, 10);
 }
 
 // Method 2:
@@ -40,9 +41,9 @@ std::vector<MSG::T_PARAMS> topic_param_list;
     using MSG::T_PARAMS;
     using MSG::M_TYPE;
     // Start adding topics
-    topic_param_list.push_back( T_PARAMS("/chatter_0", M_TYPE::String, true, 10) );
-    topic_param_list.push_back( T_PARAMS("/chatter_1", M_TYPE::String, true, 10) );
-    topic_param_list.push_back( T_PARAMS("/chatter_2", M_TYPE::String, true, 10) );
+    topic_param_list.push_back( T_PARAMS("/chatter_0", M_TYPE::String, true, 10, 10) );
+    topic_param_list.push_back( T_PARAMS("/chatter_1", M_TYPE::String, true, 10, 10) );
+    topic_param_list.push_back( T_PARAMS("/chatter_2", M_TYPE::String, true, 10, 10) );
 }
 ros_interface.load_topics(topic_param_list);
 */
@@ -65,30 +66,37 @@ namespace MSG{
         std::string name;
         int type; // According to the enum value defined in ROS_INTERFACE class
         bool is_input; // if not, it's output
+        size_t ROS_queue; // The lengh of the ROS queue
         size_t buffer_length; // The buffer length setting for the SPSC buffer used for this topic
-        size_t topic_id; // The topic_id
+
         //
-        T_PARAMS(): type(0), is_input(false), buffer_length(1)
+        int topic_id; // The topic_id for backward indexing. This is assigned by ROS_INTERFACE, according to the order of adding sequence
+        //
+        T_PARAMS(): type(0), is_input(false), ROS_queue(10), buffer_length(1), topic_id(-1)
         {}
-        T_PARAMS(const std::string &name_in, int type_in, bool is_input_in, size_t buffer_length_in):
-            name(name_in), type(type_in), is_input(is_input_in), buffer_length(buffer_length_in)
+        T_PARAMS(const std::string &name_in, int type_in, bool is_input_in, size_t ROS_queue_in, size_t buffer_length_in):
+            name(name_in), type(type_in), is_input(is_input_in), ROS_queue(ROS_queue_in), buffer_length(buffer_length_in), topic_id(-1)
+        {}
+        // The following constructor is not for user
+        T_PARAMS(const std::string &name_in, int type_in, bool is_input_in, size_t ROS_queue_in, size_t buffer_length_in, size_t topic_id_in):
+            name(name_in), type(type_in), is_input(is_input_in), ROS_queue(ROS_queue_in), buffer_length(buffer_length_in), topic_id(topic_id_in)
         {}
     };
 }// end of the namespace MSG
 
 
-
+//
+//
+//
 class ROS_INTERFACE{
 
 public:
-
-
     // Constructors
-    ROS_INTERFACE();
+    ROS_INTERFACE(int argc, char **argv);
     // Setting up topics
     // Method 1: use add_a_topic to add a single topic one at a time
     // Method 2: use load_topics to load all topics
-    bool add_a_topic(const std::string &name_in, int type_in, bool is_input_in, size_t buffer_length_in);
+    bool add_a_topic(const std::string &name_in, int type_in, bool is_input_in, size_t ROS_queue_in, size_t buffer_length_in);
     bool load_topics(const std::vector<MSG::T_PARAMS> &topic_param_list_in);
     // Really start the ROS thread
     bool start();
@@ -126,7 +134,7 @@ private:
     //------------------------------//
 
     // List of topic tid in each type of message
-    // The tid is mainly used for indexing SPSC buffers
+    // The tid is mainly used for indexing "SPSC buffers"
     // Note 1: this "tid" or type_id is type specified, different from global topic_id
     // Note 2: These vetor will be filled at adding/loading topics
     //------------------------------//
@@ -140,8 +148,7 @@ private:
     // The subs_id/pub_id is mainly used for indexing subscribers/publishers
     // Note: these ids as well as SPSC buffers will be generated when subscribing/advertising
     //------------------------------//
-    std::vector<int> _subs_id_list;
-    std::vector<int> _pub_id_list;
+    std::vector<int> _pub_subs_id_list;
     //------------------------------//
 
 
@@ -149,10 +156,10 @@ private:
     // ROS image transport (similar to  node handle, but for images)
     // image_transport::ImageTransport _ros_it;
 
-
     // Subscribers
-
+    vector<ros::Subscriber> _subscriber_list;
     // Publishers
+    vector<ros::Publisher> _publisher_list;
 
 
     // SPSC Buffers
@@ -168,6 +175,11 @@ private:
     // PointCloud
 
     //---------------------------------------------------------//
+
+
+    // Callbacks
+    // String
+    void _String_CB(const std_msgs::String::ConstPtr& msg, const MSG::T_PARAMS & params);
 
 }; // end of the class ROS_INTERFACE
 

@@ -241,6 +241,8 @@ target_link_libraries(listener_async_spinner ${catkin_LIBRARIES})
 add_executable(listener_async_spinner_async_buffer src/listener_async_spinner_async_buffer.cpp )
 target_link_libraries(listener_async_spinner_async_buffer ${catkin_LIBRARIES} async_buffer)
 
-# add_executable(listener_async_spinner_async_buffer src/listener_async_spinner_async_buffer.cpp )
-# target_link_libraries(listener_async_spinner_async_buffer ${catkin_LIBRARIES} )
+#
+add_executable(listener_ROS_interface src/listener_ROS_interface.cpp )
+target_link_libraries(listener_ROS_interface ROS_interface ${catkin_LIBRARIES}) # Note: the order is important
+
 
