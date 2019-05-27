@@ -1,13 +1,13 @@
 #include <ROS_interface.hpp>
 
-using std::vector;
-using std::string;
+// using std::vector;
+// using std::string;
 
 // Constructors
 ROS_INTERFACE::ROS_INTERFACE():
-    is_started(false),
+    _is_started(false),
     _num_topics(0),
-    _msg_type_2_topic_params(ROS_INTERFACE::MSG_TYPE::NUM_MAG_TYPE)
+    _msg_type_2_topic_params( size_t(MSG::M_TYPE::NUM_MSG_TYPE) )
 {}
 
 
@@ -15,8 +15,8 @@ ROS_INTERFACE::ROS_INTERFACE():
 // Setting up topics
 //----------------------------------------------------------------//
 // Method 1: use add_a_topic to add a single topic one at a time
-bool add_a_topic(const string &name_in, int type_in, bool is_input_in, size_t buffer_length_in){
-    _topic_param_list.push_back( TOPIC_PARAMS(name_in, type_in, is_input_in, buffer_length_in) );
+bool ROS_INTERFACE::add_a_topic(const std::string &name_in, int type_in, bool is_input_in, size_t buffer_length_in){
+    _topic_param_list.push_back( MSG::T_PARAMS(name_in, type_in, is_input_in, buffer_length_in) );
     // Parsing parameters
     //----------------------------//
     _num_topics = _topic_param_list.size();
@@ -28,7 +28,7 @@ bool add_a_topic(const string &name_in, int type_in, bool is_input_in, size_t bu
     return true;
 }
 // Method 2: use load_topics to load all topics
-bool load_topics(const vector<ROS_INTERFACE::TOPIC_PARAMS> &topic_param_list_in){
+bool ROS_INTERFACE::load_topics(const std::vector<MSG::T_PARAMS> &topic_param_list_in){
     // Filling the dataset inside the object
     // Note: Do not subscribe/advertise topic now
     //----------------------------//
@@ -49,14 +49,14 @@ bool load_topics(const vector<ROS_INTERFACE::TOPIC_PARAMS> &topic_param_list_in)
 
 // Really start the ROS thread
 bool ROS_INTERFACE::start(){
-    if (is_started) return false; // We don't restart it again (which will result in multiple node, actually)
+    if (_is_started) return false; // We don't restart it again (which will result in multiple node, actually)
     // Start the ROS thread, really starting the ROS
-    _thread_list.push_back( std::thread(_ROS_worker) );
-    is_started = true;
+    _thread_list.push_back( std::thread(&ROS_INTERFACE::_ROS_worker, this) );
+    _is_started = true;
     return true;
 }
-bool ROS_INTERFACE::is_started(){
-    return is_started;
+bool ROS_INTERFACE::is_running(){
+    return _is_started;
 }
 
 // Private methods
@@ -71,6 +71,17 @@ void ROS_INTERFACE::_ROS_worker(){
     // Note: the order of the above processes is important, since that the callback function should be exposed only when all the variables are set
     //----------------------------------//
     int _msg_type = 0;
+    // String
+    _msg_type = int(MSG::M_TYPE::String);
+    for (size_t i=0; i < _msg_type_2_topic_params[_msg_type].size(); ++i){
+        MSG::T_PARAMS _tmp_params = _msg_type_2_topic_params[_msg_type][i];
+        if (_tmp_params.is_input){
+            // Subscribe
+
+        }else{
+            // Publish
+        }
+    }
     //----------------------------------//
 
     // Start spinning and loop to the end
