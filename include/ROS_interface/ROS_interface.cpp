@@ -124,10 +124,54 @@ void ROS_INTERFACE::_ROS_worker(){
     //
     ros::waitForShutdown();
 
+
+/*
+    // Loop
+    double _loop_rate = 100.0; //1.0;
+    long long loop_time_ms = (long long)(1000.0/_loop_rate); // ms
+    ros::Rate loop_rate_obj( 1000.0/float(loop_time_ms) ); // Hz
+    //
+    auto start_old = std::chrono::high_resolution_clock::now();;
+    while (ros::ok()){
+        //
+        auto start = std::chrono::high_resolution_clock::now();
+
+        // Evaluation
+        //=============================================================//
+        // pub all String
+        bool is_published = false;
+        is_published |= _String_pub();
+
+        //=============================================================//
+        // end Evaluation
+
+        //
+        auto elapsed = std::chrono::high_resolution_clock::now() - start;
+        auto period = start - start_old;
+        start_old = start;
+
+        long long elapsed_us = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
+        long long period_us = std::chrono::duration_cast<std::chrono::microseconds>(period).count();
+
+
+        if (is_published){
+            std::cout << "(pub loop) execution time (ms): " << elapsed_us*0.001 << ", ";
+            std::cout << "period time error (ms): " << (period_us*0.001 - loop_time_ms) << "\n";
+        }
+
+        //
+        loop_rate_obj.sleep();
+    }// end of Loop
+*/
+
+
     //
     // _is_started = false;
     std::cout << "End of ros_iterface\n";
 }
+
+
+
 
 
 
@@ -136,6 +180,7 @@ void ROS_INTERFACE::_ROS_worker(){
 
 // String
 //---------------------------------------------------------------//
+// input
 void ROS_INTERFACE::_String_CB(const std_msgs::String::ConstPtr& msg, const MSG::T_PARAMS & params){
     // Type_id
     //------------------------------------//
@@ -165,16 +210,57 @@ bool ROS_INTERFACE::get_string(const int topic_id, std::string & content_out){
          return false;
      }
 }
+// output
+/*
+bool ROS_INTERFACE::_String_pub(){
+    bool is_published = false;
+    // Loop over
+    for (size_t _tid=0; _tid < buffer_list_string.size(); ++_tid){
+        if (_msg_type_2_topic_params[int(MSG::M_TYPE::String)][_tid].is_input)
+            continue;
+        size_t topic_id = _msg_type_2_topic_params[int(MSG::M_TYPE::String)][_tid].topic_id;
+        // else, it's output
+        std::pair<string,bool> _result_pair = buffer_list_string[_tid].front(true);
+        if (_result_pair.second){
+            // front and pop
+            // Content of the message
+            std_msgs::String msg;
+            msg.data = _result_pair.first;
+            _publisher_list[ _pub_subs_id_list[topic_id] ].publish(msg);
+            is_published = true;
+            //
+            // ROS_INFO("%s", msg.data.c_str());
+        }else{
+            // empty
+        }
+        //
+    }
+    //
+    return is_published;
+}
+*/
 bool ROS_INTERFACE::send_string(const int topic_id, const std::string &content_in){
-    // Type_id
+    // pub_subs_id
     //------------------------------------//
-    int _tid = _topic_tid_list[topic_id];
+    int _ps_id = _pub_subs_id_list[topic_id];
     //------------------------------------//
     // Content of the message
     std_msgs::String msg;
     msg.data = content_in;
-    _publisher_list[ _tid ].publish(msg);
+    _publisher_list[ _ps_id ].publish(msg);
     //
-    ROS_INFO("%s", msg.data.c_str());
+    // ROS_INFO("%s", msg.data.c_str());
+
+/*
+    // Type_id
+    //------------------------------------//
+    int _tid = _topic_tid_list[topic_id];
+    //------------------------------------//
+    bool result = buffer_list_string[ _tid ].put( content_in);
+    if (!result){
+        std::cout << _topic_param_list[topic_id].name << ": buffer full.\n";
+    }
+*/
+
 }
 //---------------------------------------------------------------//

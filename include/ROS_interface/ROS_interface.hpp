@@ -4,6 +4,7 @@
 // Determine if we are going to preint some debug information to std_out
 #define __DEGUG__
 
+// #define __PUB_WITH_BUFFER__
 
 // all_header.h
 #include <all_header.h>
@@ -180,6 +181,7 @@ private:
     // Callbacks
     // String
     void _String_CB(const std_msgs::String::ConstPtr& msg, const MSG::T_PARAMS & params);
+    // bool _String_pub();
 
 }; // end of the class ROS_INTERFACE
 
