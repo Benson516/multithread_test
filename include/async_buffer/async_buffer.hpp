@@ -69,6 +69,7 @@ public:
     // Queue operations
     bool                    put(const _T & element_in, bool is_droping=true);  // Copy the data in, slow
     std::pair<_T, bool>     front(bool is_poping=false);  // Copy the data out, slow
+    bool                    front(_T & content_out, bool is_poping=false);  // Copy the data out, slow
     bool                    pop();    // Only move the index, fast
 
     // Advanced method
@@ -328,7 +329,46 @@ template <class _T> std::pair<_T, bool> async_buffer<_T>::front(bool is_poping){
     }
     //
 }
+template <class _T> bool async_buffer<_T>::front(_T & content_out, bool is_poping){
+    // To get an element from the buffer
+    // Return false if it's empty
 
+    // To lock the read for ensuring only one consumer a time
+    //-------------------------------------------------------//
+    std::lock_guard<std::mutex> _lock(*_mlock_read_block);
+    //-------------------------------------------------------//
+
+    // If the buffer is empty, we
+    if (_is_empty()){
+        return false;
+    }
+    // else
+    int _idx_read_tmp;
+    {
+        std::lock_guard<std::mutex> _lock(*_mlock_idx_read);
+        _idx_read_tmp = _idx_read;
+    }
+
+    // pop?
+    if(!is_poping){
+        _copy_func(content_out, _data_list[_idx_read_tmp]);
+        return true;
+    }else{
+        // We need to copy the data first before we move the index (delete)
+        // Note: if _T is opencv Mat, the following operation won't really copy the data
+        _copy_func(content_out, _data_list[_idx_read_tmp]);
+
+        // Note: the following function already got a lock,
+        // don't use the same lock recursively
+        _set_index_read( _increase_idx(_idx_read_tmp) );
+
+        // Note: the copy method may not sussess if _T is "Mat" from opencv
+        //       be sure to use IMG.clone() mwthod outside this function.
+        // The following operation might be time consumming
+        return true;
+    }
+    //
+}
 template <class _T> bool async_buffer<_T>::pop(){
     // To remove an element from the buffer
     // Return false if it's empty

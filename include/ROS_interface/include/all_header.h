@@ -16,6 +16,11 @@
 #include <std_msgs/String.h>
 
 // MSG: Image
+// #include "opencv2/opencv.hpp"
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/core/core.hpp>
+#include <opencv/cv.hpp>
+//
 #include <image_transport/image_transport.h>
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/image_encodings.h>
@@ -34,7 +39,7 @@
 #include <sstream>
 #include <ctime>
 #include <time.h>
-
+using namespace cv;
 // The SPSC non-blocking buffer
 #include <async_buffer.hpp>
 

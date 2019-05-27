@@ -11,6 +11,12 @@ ROS_INTERFACE::ROS_INTERFACE(int argc, char **argv):
 {
     ros::init(argc, argv, "ROS_interface", ros::init_options::AnonymousName);
 }
+// Destructor
+ROS_INTERFACE::~ROS_INTERFACE(){
+    for (size_t i=0; i < _image_subscriber_list.size(); ++i){
+        _image_subscriber_list[i].shutdown();
+    }
+}
 
 
 
@@ -80,6 +86,8 @@ void ROS_INTERFACE::_ROS_worker(){
 
     // Handle with default namespace
     ros::NodeHandle _nh;
+    // ROS image transport (similar to  node handle, but for images)
+    image_transport::ImageTransport _ros_it(_nh);
 
     // Subscribing topics: generate SPSC buffers,  generate _pub_subs_id_list, subscribe
     // Note: the order of the above processes is important, since that the callback function should be exposed only when all the variables are set
@@ -112,7 +120,25 @@ void ROS_INTERFACE::_ROS_worker(){
     }
 
     // Image
-
+    _msg_type = int(MSG::M_TYPE::Image);
+    for (size_t _tid=0; _tid < _msg_type_2_topic_params[_msg_type].size(); ++_tid){
+        MSG::T_PARAMS _tmp_params = _msg_type_2_topic_params[_msg_type][_tid];
+        // SPSC Buffer
+        buffer_list_Image.push_back( async_buffer<cv::Mat>( _tmp_params.buffer_length ) );
+        // Note: assign copy function
+        buffer_list_Image[buffer_list_Image.size()-1].assign_copy_func( &ROS_INTERFACE::_cv_Mat_copy_func );
+        //
+        // subs_id, pub_id
+        if (_tmp_params.is_input){
+            // Subscribe
+            _pub_subs_id_list[_tmp_params.topic_id] = _image_subscriber_list.size();
+            _image_subscriber_list.push_back( _ros_it.subscribe( _tmp_params.name, _tmp_params.ROS_queue, boost::bind(&ROS_INTERFACE::_Image_CB, this, _1, _tmp_params)  ) );
+        }else{
+            // Publish
+            _pub_subs_id_list[_tmp_params.topic_id] = _image_publisher_list.size();
+            _image_publisher_list.push_back( _ros_it.advertise( _tmp_params.name, _tmp_params.ROS_queue) );
+        }
+    }
 
     //----------------------------------//
 
@@ -195,7 +221,7 @@ void ROS_INTERFACE::_String_CB(const std_msgs::String::ConstPtr& msg, const MSG:
         std::cout << params.name << ": buffer full.\n";
     }
 }
-bool ROS_INTERFACE::get_string(const int topic_id, std::string & content_out){
+bool ROS_INTERFACE::get_String(const int topic_id, std::string & content_out){
     // Type_id
     //------------------------------------//
     int _tid = _topic_tid_list[topic_id];
@@ -262,5 +288,50 @@ bool ROS_INTERFACE::send_string(const int topic_id, const std::string &content_i
     }
 */
 
+}
+//---------------------------------------------------------------//
+
+// Image
+//---------------------------------------------------------------//
+// input
+void ROS_INTERFACE::_Image_CB(const sensor_msgs::ImageConstPtr& msg, const MSG::T_PARAMS & params){
+    // Type_id
+    //------------------------------------//
+    int _tid = _topic_tid_list[params.topic_id];
+    //------------------------------------//
+
+    //
+    // Get the (raw) image
+    cv_bridge::CvImagePtr cv_ptr;
+    try{
+      cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
+    }
+    catch (cv_bridge::Exception& e){
+      ROS_ERROR("cv_bridge exception: %s", e.what());
+      return;
+    }
+    bool result = buffer_list_Image[ _tid ].put( cv_ptr->image);
+
+    if (!result){
+        std::cout << params.name << ": buffer full.\n";
+    }
+}
+bool ROS_INTERFACE::get_Image(const int topic_id, cv::Mat & content_out){
+    // Type_id
+    //------------------------------------//
+    int _tid = _topic_tid_list[topic_id];
+    //------------------------------------//
+    return ( buffer_list_Image[_tid].front(content_out, true) );
+}
+// output
+bool ROS_INTERFACE::send_Image(const int topic_id, const cv::Mat &content_in){
+    // pub_subs_id
+    //------------------------------------//
+    int _ps_id = _pub_subs_id_list[topic_id];
+    //------------------------------------//
+    // Content of the message
+    cv_bridge::CvImagePtr cv_ptr;
+    _cv_Mat_copy_func(cv_ptr->image, content_in);
+    _image_publisher_list[ _ps_id ].publish(cv_ptr->toImageMsg());
 }
 //---------------------------------------------------------------//

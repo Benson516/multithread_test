@@ -94,6 +94,7 @@ class ROS_INTERFACE{
 public:
     // Constructors
     ROS_INTERFACE(int argc, char **argv);
+    ~ROS_INTERFACE();
     // Setting up topics
     // Method 1: use add_a_topic to add a single topic one at a time
     // Method 2: use load_topics to load all topics
@@ -108,13 +109,15 @@ public:
     // Getting methods for each type of message
     // The topic_id should be the "global id"
     //---------------------------------------------------------//
-    bool get_string(const int topic_id, std::string & content_out);
+    bool get_String(const int topic_id, std::string & content_out);
+    bool get_Image(const int topic_id, cv::Mat & content_out);
     //---------------------------------------------------------//
 
     // Sending methods for each type of message
     // The topic_id should be the "global id"
     //---------------------------------------------------------//
     bool send_string(const int topic_id, const std::string &content_in);
+    bool send_Image(const int topic_id, const cv::Mat &content_in);
     //---------------------------------------------------------//
 
 private:
@@ -156,7 +159,12 @@ private:
 
     // ROS image transport (similar to  node handle, but for images)
     // image_transport::ImageTransport _ros_it;
+    // Camera subscribers
+    vector<image_transport::Subscriber> _image_subscriber_list;
+    // Image publishers
+    vector<image_transport::Publisher> _image_publisher_list;
 
+    // General subscriber/publisher
     // Subscribers
     vector<ros::Subscriber> _subscriber_list;
     // Publishers
@@ -171,7 +179,18 @@ private:
     //---------------------------------------------------------//
     // String
     std::vector< async_buffer<std::string> > buffer_list_string;
+
     // Image
+    std::vector< async_buffer<cv::Mat> > buffer_list_Image;
+    // Note: if _T is the opencv Mat,
+    //       you should attach acopy function using Mat::clone() or Mat.copyTo()
+    // Note: static members are belong to class itself not the object
+    static bool _cv_Mat_copy_func(cv::Mat & _target, const cv::Mat & _source){
+        _target = _source.clone();
+        return true;
+    }
+
+    // PointCloud
 
     // PointCloud
 
@@ -179,9 +198,14 @@ private:
 
 
     // Callbacks
+    //---------------------------------------------------------//
     // String
     void _String_CB(const std_msgs::String::ConstPtr& msg, const MSG::T_PARAMS & params);
     // bool _String_pub();
+
+    // Image
+    void _Image_CB(const sensor_msgs::ImageConstPtr& msg, const MSG::T_PARAMS & params);
+    //---------------------------------------------------------//
 
 }; // end of the class ROS_INTERFACE
 
