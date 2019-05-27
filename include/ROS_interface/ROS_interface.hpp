@@ -67,6 +67,8 @@ namespace ROS_INTERFACE{
         bool is_input; // if not, it's output
         size_t buffer_length; // The buffer length setting for the SPSC buffer used for this topic
         //
+        // size_t topic_id; // The topic_id
+        //
         TOPIC_PARAMS(): type(0), is_input(false), buffer_length(1)
         {}
         TOPIC_PARAMS(const std::string &name_in, int type_in, bool is_input_in, size_t buffer_length_in):
@@ -138,7 +140,8 @@ private:
     //------------------------------//
 
     // The subs_id and pub_id for each topic_id
-    // The _subs_id/_pub_id is mainly used for indexing subscribers/publishers
+    // mapping - topic_id : subs_id/pub_id
+    // The subs_id/pub_id is mainly used for indexing subscribers/publishers
     // Note: these ids as well as SPSC buffers will be generated when subscribing/advertising
     //------------------------------//
     vector<int> _subs_id_list;

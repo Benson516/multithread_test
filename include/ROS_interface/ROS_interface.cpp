@@ -49,7 +49,7 @@ bool load_topics(const vector<ROS_INTERFACE::TOPIC_PARAMS> &topic_param_list_in)
 
 // Really start the ROS thread
 bool ROS_INTERFACE::start(){
-    if (is_started) return false;
+    if (is_started) return false; // We don't restart it again (which will result in multiple node, actually)
     // Start the ROS thread, really starting the ROS
     _thread_list.push_back( std::thread(_ROS_worker) );
     is_started = true;
@@ -64,12 +64,14 @@ bool ROS_INTERFACE::is_started(){
 void ROS_INTERFACE::_ROS_worker(){
     // This thread is called by start()
 
-    // Subscribing topics: generate _subs_id_list, generate SPSC buffers, subscribe
-    // Note: the order is important, since that the callback function should be exposed only when all the variables are set
-
-    // Advertising topics: generated _pub_id_list, generate SPSC buffers, advertise
-    // Note: the order is important, since that the callback function should be exposed only when all the variables are set
-
+    // Subscribing topics: generate SPSC buffers,  generate _subs_id_list, subscribe
+    // Note: the order of the above processes is important, since that the callback function should be exposed only when all the variables are set
+    //----------------------------------//
+    // Advertising topics: generate SPSC buffers, generated _pub_id_list, advertise
+    // Note: the order of the above processes is important, since that the callback function should be exposed only when all the variables are set
+    //----------------------------------//
+    int _msg_type = 0;
+    //----------------------------------//
 
     // Start spinning and loop to the end
 
