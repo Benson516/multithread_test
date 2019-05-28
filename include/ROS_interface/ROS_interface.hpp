@@ -59,7 +59,7 @@ namespace MSG{
     enum class M_TYPE{
         String,
         Image,
-        // PointCloud
+        ITRIPointCloud,
         NUM_MSG_TYPE
     };
 
@@ -111,6 +111,7 @@ public:
     //---------------------------------------------------------//
     bool get_String(const int topic_id, std::string & content_out);
     bool get_Image(const int topic_id, cv::Mat & content_out);
+    bool get_ITRIPointCloud(const int topic_id, pcl::PointCloud<pcl::PointXYZI> & content_out);
     //---------------------------------------------------------//
 
     // Sending methods for each type of message
@@ -118,11 +119,14 @@ public:
     //---------------------------------------------------------//
     bool send_string(const int topic_id, const std::string &content_in);
     bool send_Image(const int topic_id, const cv::Mat &content_in);
+    bool send_ITRIPointCloud(const int topic_id, const pcl::PointCloud<pcl::PointXYZI> &content_in);
     //---------------------------------------------------------//
 
 private:
     bool _is_started;
     size_t _num_topics;
+
+    size_t _num_ros_cb_thread;
 
     // Although we only use "one" thread, by using this container,
     // we can start the thread later by push_back element
@@ -156,6 +160,11 @@ private:
     //------------------------------//
 
 
+    // General subscriber/publisher
+    // Subscribers
+    vector<ros::Subscriber> _subscriber_list;
+    // Publishers
+    vector<ros::Publisher> _publisher_list;
 
     // ROS image transport (similar to  node handle, but for images)
     // image_transport::ImageTransport _ros_it;
@@ -164,11 +173,8 @@ private:
     // Image publishers
     vector<image_transport::Publisher> _image_publisher_list;
 
-    // General subscriber/publisher
-    // Subscribers
-    vector<ros::Subscriber> _subscriber_list;
-    // Publishers
-    vector<ros::Publisher> _publisher_list;
+
+
 
 
     // SPSC Buffers
@@ -178,22 +184,21 @@ private:
     //       The result is that we will have multiple arrays of SPSC buffers
     //---------------------------------------------------------//
     // String
-    std::vector< async_buffer<std::string> > buffer_list_string;
+    std::vector< async_buffer<std::string> > buffer_list_String;
 
-    // Image
+    // Image (converted to cv::Mat in callback)
     std::vector< async_buffer<cv::Mat> > buffer_list_Image;
     // Note: if _T is the opencv Mat,
     //       you should attach acopy function using Mat::clone() or Mat.copyTo()
     // Note: static members are belong to class itself not the object
     static bool _cv_Mat_copy_func(cv::Mat & _target, const cv::Mat & _source){
         _target = _source.clone();
+        // _source.copyTo(_target);
         return true;
     }
 
-    // PointCloud
-
-    // PointCloud
-
+    // ITRIPointCloud ( converted to pcl::PointCloud<pcl::PointXYZI> in callback)
+    std::vector< async_buffer< pcl::PointCloud<pcl::PointXYZI> > > buffer_list_ITRIPointCloud;
     //---------------------------------------------------------//
 
 
@@ -205,6 +210,9 @@ private:
 
     // Image
     void _Image_CB(const sensor_msgs::ImageConstPtr& msg, const MSG::T_PARAMS & params);
+
+    // ITRIPointCloud
+    void _ITRIPointCloud_CB(const multithread_test::PointCloud::ConstPtr& msg, const MSG::T_PARAMS & params);
     //---------------------------------------------------------//
 
 }; // end of the class ROS_INTERFACE
