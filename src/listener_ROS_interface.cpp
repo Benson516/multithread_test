@@ -125,12 +125,26 @@ int main(int argc, char **argv)
 
         // Image
         int image_topic_id = int(MSG_ID::camera_0);
+        /*
         for (size_t i=0; i < num_image; ++i){
             cv::Mat image_out;
             bool result = ros_interface.get_Image( (image_topic_id+i), image_out);
 
             if (result){
                 imshow(window_names[i], image_out);
+                // std::cout << "got one image\n";
+                waitKey(1);
+            }
+        }
+        */
+        vector<cv::Mat> image_out_list(num_image);
+        vector<bool> is_image_updated(num_image, false);
+        for (size_t i=0; i < num_image; ++i){
+            is_image_updated[i] = ros_interface.get_Image( (image_topic_id+i), image_out_list[i]);
+        }
+        for (size_t i=0; i < num_image; ++i){
+            if (is_image_updated[i]){
+                imshow(window_names[i], image_out_list[i]);
                 // std::cout << "got one image\n";
                 waitKey(1);
             }
