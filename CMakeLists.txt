@@ -22,13 +22,7 @@ find_package(catkin REQUIRED COMPONENTS
   cv_bridge
 )
 
-find_package(OpenCV REQUIRED)
 
-catkin_package(
-  INCLUDE_DIRS include
-  CATKIN_DEPENDS
-  DEPENDS Eigen OpenCV
-)
 
 
 ################################################
@@ -42,6 +36,19 @@ add_message_files(
   ${SOURCES_MESSAGE}
 )
 
+generate_messages(
+  DEPENDENCIES
+  std_msgs
+)
+
+
+find_package(OpenCV REQUIRED)
+
+catkin_package(
+  INCLUDE_DIRS include
+  CATKIN_DEPENDS
+  DEPENDS Eigen OpenCV
+)
 
 
 ################################################

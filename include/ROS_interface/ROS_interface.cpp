@@ -3,12 +3,17 @@
 // using std::vector;
 // using std::string;
 
+
+
 // Constructors
 ROS_INTERFACE::ROS_INTERFACE(int argc, char **argv):
     _is_started(false),
     _num_topics(0),
     _msg_type_2_topic_params( size_t(MSG::M_TYPE::NUM_MSG_TYPE) )
 {
+    //
+    _num_ros_cb_thread = 6; // Use 6 threads
+    //
     ros::init(argc, argv, "ROS_interface", ros::init_options::AnonymousName);
 }
 // Destructor
@@ -106,7 +111,7 @@ void ROS_INTERFACE::_ROS_worker(){
     for (size_t _tid=0; _tid < _msg_type_2_topic_params[_msg_type].size(); ++_tid){
         MSG::T_PARAMS _tmp_params = _msg_type_2_topic_params[_msg_type][_tid];
         // SPSC Buffer
-        buffer_list_string.push_back( async_buffer<std::string>( _tmp_params.buffer_length ) );
+        buffer_list_String.push_back( async_buffer<std::string>( _tmp_params.buffer_length ) );
         // subs_id, pub_id
         if (_tmp_params.is_input){
             // Subscribe
@@ -140,10 +145,28 @@ void ROS_INTERFACE::_ROS_worker(){
         }
     }
 
+    // ITRIPointCloud
+    _msg_type = int(MSG::M_TYPE::ITRIPointCloud);
+    for (size_t _tid=0; _tid < _msg_type_2_topic_params[_msg_type].size(); ++_tid){
+        MSG::T_PARAMS _tmp_params = _msg_type_2_topic_params[_msg_type][_tid];
+        // SPSC Buffer
+        buffer_list_ITRIPointCloud.push_back( async_buffer< pcl::PointCloud<pcl::PointXYZI> >( _tmp_params.buffer_length ) );
+        // subs_id, pub_id
+        if (_tmp_params.is_input){
+            // Subscribe
+            _pub_subs_id_list[_tmp_params.topic_id] = _subscriber_list.size();
+            _subscriber_list.push_back( _nh.subscribe<multithread_test::PointCloud>( _tmp_params.name, _tmp_params.ROS_queue, boost::bind(&ROS_INTERFACE::_ITRIPointCloud_CB, this, _1, _tmp_params)  ) );
+        }else{
+            // Publish
+            _pub_subs_id_list[_tmp_params.topic_id] = _publisher_list.size();
+            _publisher_list.push_back( _nh.advertise<multithread_test::PointCloud>( _tmp_params.name, _tmp_params.ROS_queue) );
+        }
+    }
+
     //----------------------------------//
 
     // Start spinning and loop to the end
-    ros::AsyncSpinner spinner(6); // Use ? threads
+    ros::AsyncSpinner spinner(_num_ros_cb_thread); // Use ? threads
     spinner.start();
     _is_started = true; // The flag for informing the other part of system that the ROS has begun.
     std::cout << "ros_iterface started\n";
@@ -215,7 +238,7 @@ void ROS_INTERFACE::_String_CB(const std_msgs::String::ConstPtr& msg, const MSG:
     //
     string _tmp_s;
     _tmp_s = msg->data;
-    bool result = buffer_list_string[ _tid ].put( _tmp_s);
+    bool result = buffer_list_String[ _tid ].put( _tmp_s);
 
     if (!result){
         std::cout << params.name << ": buffer full.\n";
@@ -226,7 +249,10 @@ bool ROS_INTERFACE::get_String(const int topic_id, std::string & content_out){
     //------------------------------------//
     int _tid = _topic_tid_list[topic_id];
     //------------------------------------//
-     std::pair<string,bool> _result_pair = buffer_list_string[_tid].front(true);
+    return ( buffer_list_String[_tid].front(content_out, true) );
+    /*
+    // Legacy API
+     std::pair<string,bool> _result_pair = buffer_list_String[_tid].front(true);
      if (_result_pair.second){
          // front and pop
          content_out = _result_pair.first;
@@ -235,18 +261,19 @@ bool ROS_INTERFACE::get_String(const int topic_id, std::string & content_out){
          // empty
          return false;
      }
+     */
 }
 // output
 /*
 bool ROS_INTERFACE::_String_pub(){
     bool is_published = false;
     // Loop over
-    for (size_t _tid=0; _tid < buffer_list_string.size(); ++_tid){
+    for (size_t _tid=0; _tid < buffer_list_String.size(); ++_tid){
         if (_msg_type_2_topic_params[int(MSG::M_TYPE::String)][_tid].is_input)
             continue;
         size_t topic_id = _msg_type_2_topic_params[int(MSG::M_TYPE::String)][_tid].topic_id;
         // else, it's output
-        std::pair<string,bool> _result_pair = buffer_list_string[_tid].front(true);
+        std::pair<string,bool> _result_pair = buffer_list_String[_tid].front(true);
         if (_result_pair.second){
             // front and pop
             // Content of the message
@@ -282,7 +309,7 @@ bool ROS_INTERFACE::send_string(const int topic_id, const std::string &content_i
     //------------------------------------//
     int _tid = _topic_tid_list[topic_id];
     //------------------------------------//
-    bool result = buffer_list_string[ _tid ].put( content_in);
+    bool result = buffer_list_String[ _tid ].put( content_in);
     if (!result){
         std::cout << _topic_param_list[topic_id].name << ": buffer full.\n";
     }
@@ -333,5 +360,70 @@ bool ROS_INTERFACE::send_Image(const int topic_id, const cv::Mat &content_in){
     cv_bridge::CvImagePtr cv_ptr;
     _cv_Mat_copy_func(cv_ptr->image, content_in);
     _image_publisher_list[ _ps_id ].publish(cv_ptr->toImageMsg());
+}
+//---------------------------------------------------------------//
+
+
+// Image
+//---------------------------------------------------------------//
+// input
+void ROS_INTERFACE::_ITRIPointCloud_CB(const multithread_test::PointCloud::ConstPtr& msg, const MSG::T_PARAMS & params){
+    // Type_id
+    //------------------------------------//
+    int _tid = _topic_tid_list[params.topic_id];
+    //------------------------------------//
+    // tmp cloud
+    pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_tmp (new pcl::PointCloud<pcl::PointXYZI>);
+    // Conversion
+    //-------------------------//
+    cloud_tmp->width = msg->pointCloud.size();
+    // std::cout << "cloud size = " << cloud_tmp->width << "\n";
+    cloud_tmp->height = 1;
+    cloud_tmp->is_dense = false;
+    cloud_tmp->points.resize( msg->pointCloud.size() );
+    // #pragma omp parallel for
+    for (long long i = 0; i < cloud_tmp->width; ++i)
+    {
+        cloud_tmp->points[i].x = msg->pointCloud[i].x;
+        cloud_tmp->points[i].y = msg->pointCloud[i].y;
+        cloud_tmp->points[i].z = msg->pointCloud[i].z;
+        cloud_tmp->points[i].intensity = msg->pointCloud[i].intensity;
+    }
+    //-------------------------//
+    // Add to buffer
+    bool result = buffer_list_ITRIPointCloud[ _tid ].put( *cloud_tmp);
+    //
+    if (!result){
+        std::cout << params.name << ": buffer full.\n";
+    }
+}
+bool ROS_INTERFACE::get_ITRIPointCloud(const int topic_id, pcl::PointCloud<pcl::PointXYZI> & content_out){
+    // Type_id
+    //------------------------------------//
+    int _tid = _topic_tid_list[topic_id];
+    //------------------------------------//
+    return ( buffer_list_ITRIPointCloud[_tid].front(content_out, true) );
+}
+bool ROS_INTERFACE::send_ITRIPointCloud(const int topic_id, const pcl::PointCloud<pcl::PointXYZI> &content_in){
+    // pub_subs_id
+    //------------------------------------//
+    int _ps_id = _pub_subs_id_list[topic_id];
+    //------------------------------------//
+
+    // Content of the message
+    multithread_test::PointCloud msg;
+    // Conversion
+    //-------------------------//
+    msg.pointCloud.resize( content_in.points.size() );
+    // #pragma omp parallel for
+    for (size_t i = 0; i < content_in.width; ++i)
+    {
+        msg.pointCloud[i].x = content_in.points[i].x;
+        msg.pointCloud[i].y = content_in.points[i].y;
+        msg.pointCloud[i].z = content_in.points[i].z;
+        msg.pointCloud[i].intensity = content_in.points[i].intensity;
+    }
+    //-------------------------//
+    _publisher_list[ _ps_id ].publish(msg);
 }
 //---------------------------------------------------------------//

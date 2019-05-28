@@ -24,6 +24,9 @@
 #include <image_transport/image_transport.h>
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/image_encodings.h>
+
+// MSG: ITRIPointCloud
+#include <multithread_test/PointCloud.h>
 //--------------------------------------------//
 
 // Core libraries
@@ -48,6 +51,12 @@ using namespace cv;
 #include <boost/bind.hpp>
 
 
+
+// PCL
+#include <pcl_conversions/pcl_conversions.h>
+#include <pcl/conversions.h>
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
 
 
 
