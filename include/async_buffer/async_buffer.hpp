@@ -2,7 +2,7 @@
 #define ASYNC_BUFFER_H
 
 // Determine if we are going to preint some debug information to std_out
-#define __DEGUG__
+// #define __DEGUG__
 
 /*
 This is a class that implement a single-producer-single-consumer (SPSC) queue.
@@ -11,7 +11,10 @@ The implementation of this queue is based on a circular buffer using fixed-lengt
 */
 
 //
-#include <iostream>
+#ifdef __DEGUG__
+    #include <iostream> //
+#endif
+#include <memory> // <-- this is for std::shared_ptr
 #include <vector>
 #include <utility> // std::pair, std::make_pair
 #include <mutex>
@@ -64,8 +67,9 @@ public:
 
 
     // Queue operations
-    bool                    put(_T & element_in, bool is_droping=true);  // Copy the data in, slow
+    bool                    put(const _T & element_in, bool is_droping=true);  // Copy the data in, slow
     std::pair<_T, bool>     front(bool is_poping=false);  // Copy the data out, slow
+    bool                    front(_T & content_out, bool is_poping=false);  // Copy the data out, slow
     bool                    pop();    // Only move the index, fast
 
     // Advanced method
@@ -74,10 +78,10 @@ public:
 
     // Status of the queue
     // The following method has suttle mutex setting that may effect the result
-    bool is_empty(); // This is a fast method which may return true even when there are some elements in queue (but not vise versa)
-    bool is_full();  // // This is a fast method which may return true even when there are some sapces in queue (but not vise versa)
-    int size_est(); // The number of buffered contents. This is a fast method with no mutex but may be incorrect in both direction.
-    size_t size_exact(); // The number of buffered contents. This is a blocking method with mutex, which will return a correct value.
+    bool is_empty(){return _is_empty();} // This is a fast method which may return true even when there are some elements in queue (but not vise versa)
+    bool is_full(){return _is_full();}  // // This is a fast method which may return true even when there are some sapces in queue (but not vise versa)
+    int size_est(){return _size_est();} // The number of buffered contents. This is a fast method with no mutex but may be incorrect in both direction.
+    size_t size_exact(){return _size_exact();} // The number of buffered contents. This is a blocking method with mutex, which will return a correct value.
 
 
 private:
@@ -152,14 +156,23 @@ private:
         // Calculate the number of buffered elements according to the indexes given.
         return _correcting_idx(_idx_write_in - _idx_read_in);
     }
-    inline bool _is_empty(int _idx_write_in, int _idx_read_in){
+    inline bool _is_empty_cal(int _idx_write_in, int _idx_read_in){
         // Determine if the given indexes indicate that the buffer is full
         return ( _cal_size(_idx_write_in, _idx_read_in) == 0 );
     }
-    inline bool _is_full(int _idx_write_in, int _idx_read_in){
+    inline bool _is_full_cal(int _idx_write_in, int _idx_read_in){
         // Determine if the given indexes indicate that the buffer is full
         return ( _cal_size(_idx_write_in, _idx_read_in) == (_dl_len-1) );
     }
+
+    // Status of the queue
+    // The following method has suttle mutex setting that may effect the result
+    bool _is_empty(); // This is a fast method which may return true even when there are some elements in queue (but not vise versa)
+    bool _is_full();  // // This is a fast method which may return true even when there are some sapces in queue (but not vise versa)
+    int _size_est(); // The number of buffered contents. This is a fast method with no mutex but may be incorrect in both direction.
+    size_t _size_exact(); // The number of buffered contents. This is a blocking method with mutex, which will return a correct value.
+
+
 
 };
 
@@ -224,7 +237,7 @@ async_buffer<_T>::async_buffer(size_t buffer_length_in, _T place_holder_element)
 
 
 //
-template <class _T> bool async_buffer<_T>::put(_T & element_in, bool is_droping){
+template <class _T> bool async_buffer<_T>::put(const _T & element_in, bool is_droping){
 
     // To lock the write for ensuring only one producer a time
     //-------------------------------------------------------//
@@ -234,11 +247,11 @@ template <class _T> bool async_buffer<_T>::put(_T & element_in, bool is_droping)
 
     // To put an element into the buffer
     bool _all_is_well = true;
-    if (is_full()){
+    if (_is_full()){
         //
         if (is_droping){
             // Keep dropping until the buffer is not full
-            while(is_full()){
+            while(_is_full()){
                 if (!pop())
                     return false;
             }
@@ -278,7 +291,7 @@ template <class _T> std::pair<_T, bool> async_buffer<_T>::front(bool is_poping){
     //-------------------------------------------------------//
 
     // If the buffer is empty, we
-    if (is_empty()){
+    if (_is_empty()){
         return std::pair<_T, bool>(this->_empty_element, false);
     }
     // else
@@ -316,7 +329,46 @@ template <class _T> std::pair<_T, bool> async_buffer<_T>::front(bool is_poping){
     }
     //
 }
+template <class _T> bool async_buffer<_T>::front(_T & content_out, bool is_poping){
+    // To get an element from the buffer
+    // Return false if it's empty
 
+    // To lock the read for ensuring only one consumer a time
+    //-------------------------------------------------------//
+    std::lock_guard<std::mutex> _lock(*_mlock_read_block);
+    //-------------------------------------------------------//
+
+    // If the buffer is empty, we
+    if (_is_empty()){
+        return false;
+    }
+    // else
+    int _idx_read_tmp;
+    {
+        std::lock_guard<std::mutex> _lock(*_mlock_idx_read);
+        _idx_read_tmp = _idx_read;
+    }
+
+    // pop?
+    if(!is_poping){
+        _copy_func(content_out, _data_list[_idx_read_tmp]);
+        return true;
+    }else{
+        // We need to copy the data first before we move the index (delete)
+        // Note: if _T is opencv Mat, the following operation won't really copy the data
+        _copy_func(content_out, _data_list[_idx_read_tmp]);
+
+        // Note: the following function already got a lock,
+        // don't use the same lock recursively
+        _set_index_read( _increase_idx(_idx_read_tmp) );
+
+        // Note: the copy method may not sussess if _T is "Mat" from opencv
+        //       be sure to use IMG.clone() mwthod outside this function.
+        // The following operation might be time consumming
+        return true;
+    }
+    //
+}
 template <class _T> bool async_buffer<_T>::pop(){
     // To remove an element from the buffer
     // Return false if it's empty
@@ -327,7 +379,7 @@ template <class _T> bool async_buffer<_T>::pop(){
     //-------------------------------------------------------//
 
 
-    if (is_empty()){
+    if (_is_empty()){
         return false;
     }
     // else
@@ -359,7 +411,7 @@ template <class _T> std::pair<_T, bool> async_buffer<_T>::pop_front(){
     //-------------------------------------------------------//
 
     // If the buffer is empty, we
-    if (is_empty()){
+    if (_is_empty()){
         return std::pair<_T, bool>(this->_empty_element, false);
     }
     // else
@@ -388,7 +440,7 @@ template <class _T> std::pair<_T, bool> async_buffer<_T>::pop_front(){
 
 
 //
-template <class _T> bool async_buffer<_T>::is_empty(){
+template <class _T> bool async_buffer<_T>::_is_empty(){
     // Note: This method is used by "consumer"
     // This is a fast method which may return true even when there are some elements in queue (but not vise versa)
 
@@ -403,10 +455,10 @@ template <class _T> bool async_buffer<_T>::is_empty(){
         _idx_read_tmp = _idx_read;
     }
 
-    return _is_empty(_idx_write_tmp, _idx_read_tmp);
+    return _is_empty_cal(_idx_write_tmp, _idx_read_tmp);
 }
 
-template <class _T> bool async_buffer<_T>::is_full(){
+template <class _T> bool async_buffer<_T>::_is_full(){
     // Note: This method is used by "producer"
     // // This is a fast method which may return true even when there are some sapces in queue (but not vise versa)
 
@@ -422,10 +474,10 @@ template <class _T> bool async_buffer<_T>::is_full(){
     }
 
 
-    return _is_full(_idx_write_tmp, _idx_read_tmp);
+    return _is_full_cal(_idx_write_tmp, _idx_read_tmp);
 }
 
-template <class _T> int async_buffer<_T>::size_est(){
+template <class _T> int async_buffer<_T>::_size_est(){
     // This method may be used by both producer and consumer
     // The number of buffered contents. This is a fast method with no mutex but may be incorrect in both direction.
 
@@ -447,7 +499,7 @@ template <class _T> int async_buffer<_T>::size_est(){
     return _cal_size(_idx_write_tmp, _idx_read_tmp);
 }
 
-template <class _T> size_t async_buffer<_T>::size_exact(){
+template <class _T> size_t async_buffer<_T>::_size_exact(){
     // This method may be used by both producer and consumer
     // The number of buffered contents. This is a blocking method with mutex, which will return a correct value.
 
