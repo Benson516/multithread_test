@@ -212,7 +212,7 @@ private:
     void _Image_CB(const sensor_msgs::ImageConstPtr& msg, const MSG::T_PARAMS & params);
 
     // ITRIPointCloud
-    void _ITRIPointCloud_CB(const multithread_test::PointCloud::ConstPtr& msg, const MSG::T_PARAMS & params);
+    void _ITRIPointCloud_CB(const msgs::PointCloud::ConstPtr& msg, const MSG::T_PARAMS & params);
     //---------------------------------------------------------//
 
 }; // end of the class ROS_INTERFACE

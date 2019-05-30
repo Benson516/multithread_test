@@ -16,8 +16,8 @@ using namespace cv;
 #define STRING_TOPIC_COUNT 6
 
 
-// #define __OPENCV_WINDOW__
-#define __SUB_POINT_CLOUD__
+#define __OPENCV_WINDOW__
+// #define __SUB_POINT_CLOUD__
 
 
 
@@ -125,7 +125,7 @@ int main(int argc, char **argv)
 
 
     // Spin
-    double _loop_rate = 100; // 2.0; //1.0;
+    double _loop_rate = 100.0; // 2.0; //1.0;
     long long loop_time_ms = (long long)(1000.0/_loop_rate); // ms
     //
     auto start_old = std::chrono::high_resolution_clock::now();;
@@ -205,8 +205,8 @@ int main(int argc, char **argv)
 
         long long elapsed_us = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
         long long period_us = std::chrono::duration_cast<std::chrono::microseconds>(period).count();
-        // std::cout << "execution time (ms): " << elapsed_us*0.001 << ", ";
-        // std::cout << "period time error (ms): " << (period_us*0.001 - loop_time_ms) << "\n";
+        std::cout << "execution time (ms): " << elapsed_us*0.001 << ", ";
+        std::cout << "period time error (ms): " << (period_us*0.001 - loop_time_ms) << "\n";
         //
 
 

@@ -26,7 +26,7 @@
 #include <sensor_msgs/image_encodings.h>
 
 // MSG: ITRIPointCloud
-#include <multithread_test/PointCloud.h>
+#include <msgs/PointCloud.h>
 //--------------------------------------------//
 
 // Core libraries

@@ -15,6 +15,8 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   message_generation
 #
+  msgs # ITRI package: "msgs"
+#
   pcl_conversions
   pcl_ros
 #
@@ -31,14 +33,15 @@ find_package(catkin REQUIRED COMPONENTS
 
 
 
-file(GLOB SOURCES_MESSAGE *.msg)
-add_message_files(
-  ${SOURCES_MESSAGE}
-)
+# file(GLOB SOURCES_MESSAGE *.msg)
+# add_message_files(
+#   ${SOURCES_MESSAGE}
+# )
 
 generate_messages(
   DEPENDENCIES
   std_msgs
+  msgs
 )
 
 

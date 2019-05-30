@@ -155,11 +155,11 @@ void ROS_INTERFACE::_ROS_worker(){
         if (_tmp_params.is_input){
             // Subscribe
             _pub_subs_id_list[_tmp_params.topic_id] = _subscriber_list.size();
-            _subscriber_list.push_back( _nh.subscribe<multithread_test::PointCloud>( _tmp_params.name, _tmp_params.ROS_queue, boost::bind(&ROS_INTERFACE::_ITRIPointCloud_CB, this, _1, _tmp_params)  ) );
+            _subscriber_list.push_back( _nh.subscribe<msgs::PointCloud>( _tmp_params.name, _tmp_params.ROS_queue, boost::bind(&ROS_INTERFACE::_ITRIPointCloud_CB, this, _1, _tmp_params)  ) );
         }else{
             // Publish
             _pub_subs_id_list[_tmp_params.topic_id] = _publisher_list.size();
-            _publisher_list.push_back( _nh.advertise<multithread_test::PointCloud>( _tmp_params.name, _tmp_params.ROS_queue) );
+            _publisher_list.push_back( _nh.advertise<msgs::PointCloud>( _tmp_params.name, _tmp_params.ROS_queue) );
         }
     }
 
@@ -364,10 +364,10 @@ bool ROS_INTERFACE::send_Image(const int topic_id, const cv::Mat &content_in){
 //---------------------------------------------------------------//
 
 
-// Image
+// ITRIPointCloud
 //---------------------------------------------------------------//
 // input
-void ROS_INTERFACE::_ITRIPointCloud_CB(const multithread_test::PointCloud::ConstPtr& msg, const MSG::T_PARAMS & params){
+void ROS_INTERFACE::_ITRIPointCloud_CB(const msgs::PointCloud::ConstPtr& msg, const MSG::T_PARAMS & params){
     // Type_id
     //------------------------------------//
     int _tid = _topic_tid_list[params.topic_id];
@@ -411,7 +411,7 @@ bool ROS_INTERFACE::send_ITRIPointCloud(const int topic_id, const pcl::PointClou
     //------------------------------------//
 
     // Content of the message
-    multithread_test::PointCloud msg;
+    msgs::PointCloud msg;
     // Conversion
     //-------------------------//
     msg.pointCloud.resize( content_in.points.size() );
