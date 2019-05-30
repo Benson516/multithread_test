@@ -356,7 +356,9 @@ template <class _T> bool async_buffer<_T>::front(_T & content_out, bool is_popin
     }else{
         // We need to copy the data first before we move the index (delete)
         // Note: if _T is opencv Mat, the following operation won't really copy the data
+
         _copy_func(content_out, _data_list[_idx_read_tmp]);
+        // content_out = std::move(_data_list[_idx_read_tmp]); // The content in the buffer will disappear.
 
         // Note: the following function already got a lock,
         // don't use the same lock recursively

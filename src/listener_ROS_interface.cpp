@@ -17,7 +17,7 @@ using namespace cv;
 
 
 #define __OPENCV_WINDOW__
-// #define __SUB_POINT_CLOUD__
+#define __SUB_POINT_CLOUD__
 
 
 
@@ -183,9 +183,9 @@ int main(int argc, char **argv)
 #ifdef __SUB_POINT_CLOUD__
         // ITRIPointCloud
         int ITRIPointCloud_topic_id = int(MSG_ID::point_cloud_1);
-        pcl::PointCloud<pcl::PointXYZI>::Ptr pc_out_Ptr;
+        pcl::PointCloud<pcl::PointXYZI> pc_out;
         for (size_t i=0; i < num_pointcloud; ++i){
-            bool result = ros_interface.get_ITRIPointCloud( (ITRIPointCloud_topic_id+i), *pc_out_Ptr);
+            bool result = ros_interface.get_ITRIPointCloud( (ITRIPointCloud_topic_id+i), pc_out);
             //
             if (result){
                 // std::cout << "got one pointcloud\n";
