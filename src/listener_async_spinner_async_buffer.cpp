@@ -151,6 +151,72 @@ int main(int argc, char **argv)
   //
 
 
+/*
+    {
+        using TIME_STAMP::Time;
+        // Test of async_buffer::Time
+        // Time time_A(2.5);
+        Time time_A(-2.5);
+        // time_A.now();
+        std::cout << "time_A.sec = " << time_A.sec << "\n";
+        std::cout << "time_A.nsec = " << time_A.nsec << "\n";
+        // double _secs = time_A.toSec();
+        std::cout << "time_A.toSec() = " << time_A.toSec() << "\n";
+
+        Time time_B(1.7);
+        std::cout << "time_B.sec = " << time_B.sec << "\n";
+        std::cout << "time_B.nsec = " << time_B.nsec << "\n";
+
+        // time_B.now();
+        std::cout << "time_B == time_A: " << (time_B == time_A) << "\n";
+        std::cout << "time_B != time_A: " << (time_B != time_A) << "\n";
+        std::cout << "time_B > time_A: " << (time_B > time_A) << "\n";
+        std::cout << "time_B >= time_A: " << (time_B >= time_A) << "\n";
+        std::cout << "time_B < time_A: " << (time_B < time_A) << "\n";
+        std::cout << "time_B <= time_A: " << (time_B <= time_A) << "\n";
+
+        //
+        Time time_B2 = time_B + time_A;
+        std::cout << "time_B2.sec = " << time_B2.sec << "\n";
+        std::cout << "time_B2.nsec = " << time_B2.nsec << "\n";
+        std::cout << "time_B2.toSec() = " << time_B2.toSec() << "\n";
+
+        Time time_B3 = time_B;
+        time_B3 += time_A;
+        std::cout << "time_B3.sec = " << time_B3.sec << "\n";
+        std::cout << "time_B3.nsec = " << time_B3.nsec << "\n";
+        std::cout << "time_B3.toSec() = " << time_B3.toSec() << "\n";
+        time_B3 -= time_A;
+        std::cout << "time_B3.sec = " << time_B3.sec << "\n";
+        std::cout << "time_B3.nsec = " << time_B3.nsec << "\n";
+        std::cout << "time_B3.toSec() = " << time_B3.toSec() << "\n";
+
+
+
+        Time time_C;
+        time_C.now();
+
+        //
+        // Test of ros::Time
+        ros::Time ros_time = ros::Time::now();
+        std::cout << "ros_time.sec = " << ros_time.sec << "\n";
+        std::cout << "ros_time.nsec = " << ros_time.nsec << "\n";
+        // double _secs = ros_time.toSec();
+        std::cout << "ros_time.toSec() = " << ros_time.toSec() << "\n";
+
+
+        std::cout << "Duration = " << ros_time.toSec() - time_C.toSec() << "\n";
+
+        Time time_D(ros_time.sec, ros_time.nsec);
+        Time time_E(ros_time.toSec());
+        std::cout << "Duration = " << time_D.toSec() - time_C.toSec() << "\n";
+        std::cout << "time_D == time_E: " << (time_D == time_E) << "\n";
+
+    }
+*/
+
+
+
 
 
 

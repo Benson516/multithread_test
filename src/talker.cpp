@@ -38,6 +38,13 @@ int main(int argc, char **argv)
   // ros::Publisher chatter_pub = n.advertise<std_msgs::String>("chatter_1", 1000);
 
 
+  // Test of ros::Time
+  ros::Time ros_time = ros::Time::now();
+  std::cout << "ros_time.sec = " << ros_time.sec << "\n";
+  std::cout << "ros_time.nsec = " << ros_time.nsec << "\n";
+  double _secs = ros_time.toSec();
+  std::cout << "ros_time.toSec() = " << _secs << "\n";
+
 
   double _loop_rate = 5.0; // 10.0; // 2.0
   ros::Rate loop_rate_obj(_loop_rate);
