@@ -151,7 +151,7 @@ int main(int argc, char **argv)
   //
 
 
-/*
+
     {
         using TIME_STAMP::Time;
         // Test of async_buffer::Time
@@ -193,8 +193,11 @@ int main(int argc, char **argv)
 
 
 
-        Time time_C;
-        time_C.now();
+        Time time_C = Time::now();
+        // time_C.set_now();
+        std::cout << "time_C.sec = " << time_C.sec << "\n";
+        std::cout << "time_C.nsec = " << time_C.nsec << "\n";
+        std::cout << "time_C.toSec() = " << time_C.toSec() << "\n";
 
         //
         // Test of ros::Time
@@ -209,11 +212,11 @@ int main(int argc, char **argv)
 
         Time time_D(ros_time.sec, ros_time.nsec);
         Time time_E(ros_time.toSec());
-        std::cout << "Duration = " << time_D.toSec() - time_C.toSec() << "\n";
-        std::cout << "time_D == time_E: " << (time_D == time_E) << "\n";
+        std::cout << "Duration = " << (time_D - time_C).toSec() << "\n";
+        std::cout << "time_D - time_E = " << (time_D - time_E).toSec() << "\n";
 
     }
-*/
+
 
 
 

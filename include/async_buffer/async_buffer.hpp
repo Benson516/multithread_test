@@ -67,13 +67,23 @@ namespace TIME_STAMP{
         long double toSec(){
             return ( (long double)(sec) + (long double)(nsec)*const_10_neg9 );
         }
-        Time now(){
+        // Usage: Time time_A = Time::now();
+        static Time now(){
+            using namespace std::chrono;
+            auto tp_n = high_resolution_clock::now();
+            auto tp_sec = time_point_cast<seconds>(tp_n);
+            Time time_B;
+            time_B.sec = tp_sec.time_since_epoch().count();
+            time_B.nsec = duration_cast<nanoseconds>(tp_n - tp_sec).count();
+            return time_B;
+        }
+        // Usage: time_A.set_now(); --> time_A becomes the current time.
+        void set_now(){
             using namespace std::chrono;
             auto tp_n = high_resolution_clock::now();
             auto tp_sec = time_point_cast<seconds>(tp_n);
             sec = tp_sec.time_since_epoch().count();
             nsec = duration_cast<nanoseconds>(tp_n - tp_sec).count();
-            return *this;
         }
         // Comparison
         bool equal(const Time &time_B) const {
