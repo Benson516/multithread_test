@@ -151,7 +151,7 @@ int main(int argc, char **argv)
   //
 
 
-
+/*
     {
         using TIME_STAMP::Time;
         // Test of async_buffer::Time
@@ -216,7 +216,7 @@ int main(int argc, char **argv)
         std::cout << "time_D - time_E = " << (time_D - time_E).toSec() << "\n";
 
     }
-
+*/
 
 
 
