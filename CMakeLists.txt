@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(multithread_test)
-set (CMAKE_CXX_STANDARD 14) 
+set (CMAKE_CXX_STANDARD 14)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
@@ -67,7 +67,7 @@ catkin_package(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES multithread_test
-   CATKIN_DEPENDS roscpp rospy std_msgs message_runtime image_transport sensor_msgs cv_bridge message_runtime 
+   CATKIN_DEPENDS roscpp rospy std_msgs message_runtime image_transport sensor_msgs cv_bridge message_runtime
 #  DEPENDS system_lib
 )
 
@@ -96,11 +96,14 @@ add_definitions(${PCL_DEFINITIONS})
 
 
 # Libraries
-add_library (async_buffer STATIC include/async_buffer/async_buffer.cpp) 
-# target_link_libraries(async_buffer ${ALL_LIBS}  ) 
+add_library (async_buffer STATIC include/async_buffer/async_buffer.cpp)
+# target_link_libraries(async_buffer ${ALL_LIBS}  )
 
-add_library (ROS_interface STATIC include/ROS_interface/ROS_interface.cpp) 
-target_link_libraries(ROS_interface async_buffer) 
+add_library (async_buffer_v2 STATIC include/async_buffer/async_buffer_v2.cpp)
+# target_link_libraries(async_buffer_v2 ${ALL_LIBS}  )  
+
+add_library (ROS_interface STATIC include/ROS_interface/ROS_interface.cpp)
+target_link_libraries(ROS_interface async_buffer)
 
 
 add_executable(talker src/talker.cpp)
@@ -144,6 +147,3 @@ target_link_libraries(talker_ROS_interface ROS_interface ${OpenCV_LIBS} ${catkin
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
-
-
-
