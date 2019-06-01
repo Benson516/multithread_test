@@ -14,6 +14,7 @@ using namespace cv;
 
 
 #define STRING_TOPIC_COUNT 6
+#define NUM_IMAGE 9
 
 
 #define __OPENCV_WINDOW__
@@ -105,7 +106,7 @@ int main(int argc, char **argv)
 
 
     // Image
-    int num_image = 9;
+    int num_image = NUM_IMAGE;
 #ifdef __OPENCV_WINDOW__
     // OpenCV windows
     vector<string> window_names;
