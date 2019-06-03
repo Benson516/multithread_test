@@ -46,7 +46,7 @@ int main(int argc, char **argv)
   std::cout << "ros_time.toSec() = " << _secs << "\n";
 
 
-  double _loop_rate = 5.0; // 10.0; // 2.0
+  double _loop_rate = 2.0; // 5.0; // 10.0; // 2.0
   ros::Rate loop_rate_obj(_loop_rate);
   int count = 0;
   while (ros::ok())

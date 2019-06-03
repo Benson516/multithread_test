@@ -112,6 +112,7 @@ public:
     bool get_String(const int topic_id, std::string & content_out);
     bool get_Image(const int topic_id, cv::Mat & content_out);
     bool get_ITRIPointCloud(const int topic_id, pcl::PointCloud<pcl::PointXYZI> & content_out);
+    bool get_ITRIPointCloud(const int topic_id, std::shared_ptr< pcl::PointCloud<pcl::PointXYZI> > & content_out_ptr);
     //---------------------------------------------------------//
 
     // Sending methods for each type of message
@@ -192,8 +193,8 @@ private:
     //       you should attach acopy function using Mat::clone() or Mat.copyTo()
     // Note: static members are belong to class itself not the object
     static bool _cv_Mat_copy_func(cv::Mat & _target, const cv::Mat & _source){
-        _target = _source.clone();
-        // _source.copyTo(_target);
+        // _target = _source.clone();
+        _source.copyTo(_target);
         return true;
     }
 
@@ -213,6 +214,7 @@ private:
 
     // ITRIPointCloud
     void _ITRIPointCloud_CB(const msgs::PointCloud::ConstPtr& msg, const MSG::T_PARAMS & params);
+    std::shared_ptr< pcl::PointCloud<pcl::PointXYZI> > _cloud_tmp_ptr; // tmp cloud
     //---------------------------------------------------------//
 
 }; // end of the class ROS_INTERFACE

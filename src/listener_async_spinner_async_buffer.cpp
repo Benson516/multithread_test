@@ -13,7 +13,8 @@
 #include <boost/bind.hpp>
 
 // async_buffer
-#include <async_buffer.hpp>
+// #include <async_buffer.hpp>
+#include <async_buffer_v2.hpp>
 // #include "async_buffer.hpp"
 //
 
@@ -93,7 +94,13 @@ void chatter_prototype_CB(const std_msgs::String::ConstPtr& msg, string _topic_n
     // ROS_INFO("CB for [%s]: <%s>", _topic_name.c_str(), msg->data.c_str());
     string _tmp_s;
     _tmp_s = msg->data;
-    bool result = async_buffer_list[_topic_id].put( _tmp_s);
+
+    // Try pointer
+    std::shared_ptr<string> _tmp_s_ptr;
+    _tmp_s_ptr = std::make_shared<string>(_tmp_s);
+
+    // put
+    bool result = async_buffer_list[_topic_id].put( _tmp_s_ptr);
 
     if (!result){
         std::cout << _topic_name << ": buffer full.\n";
@@ -235,7 +242,7 @@ int main(int argc, char **argv)
 
 
   // ros::waitForShutdown();
-  double _loop_rate = 2.0; //1.0;
+  double _loop_rate = 1.0; // 2.0; //1.0;
   long long loop_time_ms = (long long)(1000.0/_loop_rate); // ms
   ros::Rate loop_rate_obj( 1000.0/float(loop_time_ms) ); // Hz
   //
@@ -265,15 +272,17 @@ int main(int argc, char **argv)
       for (size_t i=0; i < topic_names.size(); ++i){
           std::cout << topic_names[i] << ": ";
           std::cout << "(pre)buff_size = " << async_buffer_list[i].size_est() << " ";
-          std::pair<string,bool> _result_pair = async_buffer_list[i].front(true);
-          if (_result_pair.second){
+          string str_out;
+          std::shared_ptr<string> str_ptr;
+          if (async_buffer_list[i].front(str_ptr, true)){
+              str_out = *str_ptr;
               // std::cout << "(post)buff_size = " << async_buffer_list[i].size_est() << " ";
-              std::cout << "\tmsg: <" << _result_pair.first << ">\t";
+              std::cout << "\tmsg: <" << str_out << ">\t";
               // std::cout << "pop: " << async_buffer_list[i].pop();
 
               // Check for counts
-              size_t idx_key = _result_pair.first.rfind(key_word);
-              int count = std::stoi(_result_pair.first.substr(idx_key+8), 0);
+              size_t idx_key = str_out.rfind(key_word);
+              int count = std::stoi(str_out.substr(idx_key+8), 0);
               // std::cout << "count = " << count;
               int count_increment = count - count_in_msg_list[i];
               if ( count_increment != 1 ){

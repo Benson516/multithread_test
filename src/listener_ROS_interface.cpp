@@ -122,8 +122,8 @@ int main(int argc, char **argv)
     int num_pointcloud = 1;
 
 
-
-
+    // Declare outside the loop to avoid periodically construction and destruction.
+    std::shared_ptr< pcl::PointCloud<pcl::PointXYZI> > pc_out_ptr;
 
     // Spin
     double _loop_rate = 100.0; // 2.0; //1.0;
@@ -184,9 +184,10 @@ int main(int argc, char **argv)
 #ifdef __SUB_POINT_CLOUD__
         // ITRIPointCloud
         int ITRIPointCloud_topic_id = int(MSG_ID::point_cloud_1);
-        pcl::PointCloud<pcl::PointXYZI> pc_out;
+        // pcl::PointCloud<pcl::PointXYZI> pc_out;
+        // std::shared_ptr< pcl::PointCloud<pcl::PointXYZI> > pc_out_ptr;
         for (size_t i=0; i < num_pointcloud; ++i){
-            bool result = ros_interface.get_ITRIPointCloud( (ITRIPointCloud_topic_id+i), pc_out);
+            bool result = ros_interface.get_ITRIPointCloud( (ITRIPointCloud_topic_id+i), pc_out_ptr);
             //
             if (result){
                 // std::cout << "got one pointcloud\n";
@@ -206,8 +207,8 @@ int main(int argc, char **argv)
 
         long long elapsed_us = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
         long long period_us = std::chrono::duration_cast<std::chrono::microseconds>(period).count();
-        std::cout << "execution time (ms): " << elapsed_us*0.001 << ", ";
-        std::cout << "period time error (ms): " << (period_us*0.001 - loop_time_ms) << "\n";
+        // std::cout << "execution time (ms): " << elapsed_us*0.001 << ", ";
+        // std::cout << "period time error (ms): " << (period_us*0.001 - loop_time_ms) << "\n";
         //
 
 

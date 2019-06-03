@@ -10,6 +10,8 @@ ROS_INTERFACE::ROS_INTERFACE(int argc, char **argv):
     _is_started(false),
     _num_topics(0),
     _msg_type_2_topic_params( size_t(MSG::M_TYPE::NUM_MSG_TYPE) )
+    // The temporary containers
+    // _cloud_tmp_ptr (new pcl::PointCloud<pcl::PointXYZI>)
 {
     //
     _num_ros_cb_thread = 6; // Use 6 threads
@@ -373,25 +375,34 @@ void ROS_INTERFACE::_ITRIPointCloud_CB(const msgs::PointCloud::ConstPtr& msg, co
     int _tid = _topic_tid_list[params.topic_id];
     //------------------------------------//
     // tmp cloud
-    pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_tmp (new pcl::PointCloud<pcl::PointXYZI>);
+    // Note 1: this have been moved to be a member of the class, so that it won't keep constructing and destructing.
+    // Note 2: the pointer changed to use the std::shared_ptr instead of the original boost pointer
+
+    // pcl::PointCloud<pcl::PointXYZI>::Ptr _cloud_tmp_ptr (new pcl::PointCloud<pcl::PointXYZI>);
+    if (!_cloud_tmp_ptr){
+        _cloud_tmp_ptr.reset(new pcl::PointCloud<pcl::PointXYZI>);
+    }
     // Conversion
     //-------------------------//
-    cloud_tmp->width = msg->pointCloud.size();
-    // std::cout << "cloud size = " << cloud_tmp->width << "\n";
-    cloud_tmp->height = 1;
-    cloud_tmp->is_dense = false;
-    cloud_tmp->points.resize( msg->pointCloud.size() );
+    _cloud_tmp_ptr->width = msg->pointCloud.size();
+    // std::cout << "cloud size = " << _cloud_tmp_ptr->width << "\n";
+    _cloud_tmp_ptr->height = 1;
+    _cloud_tmp_ptr->is_dense = false;
+    //
+    // if (_cloud_tmp_ptr->points.size() < msg->pointCloud.size())
+        _cloud_tmp_ptr->points.resize( msg->pointCloud.size() );
     // #pragma omp parallel for
-    for (long long i = 0; i < cloud_tmp->width; ++i)
+    for (long long i = 0; i < _cloud_tmp_ptr->width; ++i)
     {
-        cloud_tmp->points[i].x = msg->pointCloud[i].x;
-        cloud_tmp->points[i].y = msg->pointCloud[i].y;
-        cloud_tmp->points[i].z = msg->pointCloud[i].z;
-        cloud_tmp->points[i].intensity = msg->pointCloud[i].intensity;
+        _cloud_tmp_ptr->points[i].x = msg->pointCloud[i].x;
+        _cloud_tmp_ptr->points[i].y = msg->pointCloud[i].y;
+        _cloud_tmp_ptr->points[i].z = msg->pointCloud[i].z;
+        _cloud_tmp_ptr->points[i].intensity = msg->pointCloud[i].intensity;
     }
     //-------------------------//
     // Add to buffer
-    bool result = buffer_list_ITRIPointCloud[ _tid ].put( *cloud_tmp);
+    // bool result = buffer_list_ITRIPointCloud[ _tid ].put( *_cloud_tmp_ptr);
+    bool result = buffer_list_ITRIPointCloud[ _tid ].put( _cloud_tmp_ptr); // Put in the pointer directly
     //
     if (!result){
         std::cout << params.name << ": buffer full.\n";
@@ -403,6 +414,13 @@ bool ROS_INTERFACE::get_ITRIPointCloud(const int topic_id, pcl::PointCloud<pcl::
     int _tid = _topic_tid_list[topic_id];
     //------------------------------------//
     return ( buffer_list_ITRIPointCloud[_tid].front(content_out, true) );
+}
+bool ROS_INTERFACE::get_ITRIPointCloud(const int topic_id, std::shared_ptr< pcl::PointCloud<pcl::PointXYZI> > & content_out_ptr){
+    // Type_id
+    //------------------------------------//
+    int _tid = _topic_tid_list[topic_id];
+    //------------------------------------//
+    return ( buffer_list_ITRIPointCloud[_tid].front(content_out_ptr, true) );
 }
 bool ROS_INTERFACE::send_ITRIPointCloud(const int topic_id, const pcl::PointCloud<pcl::PointXYZI> &content_in){
     // pub_subs_id
