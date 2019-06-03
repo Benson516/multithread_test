@@ -344,7 +344,7 @@ async_buffer<_T>::async_buffer(size_t buffer_length_in):
     //
     _copy_func(&_default_copy_func),
     _empty_element(),
-    _tmp_output_ptr( new _T )
+    _tmp_output_ptr(nullptr)
 {
     // The size is equals to mod(_idx_write - _idx_read, _dl_len)
     // If two indexes are identical, it means that the buffer is empty.
@@ -362,16 +362,14 @@ async_buffer<_T>::async_buffer(size_t buffer_length_in):
     _dl_len = buffer_length_in + 1; // The _data_ptr_list should always contains an place wich is ready to be written, hence it will be larger than the buffer length.
     _stamp_list.resize(_dl_len);
 
-    // Note: the following one line is not working, this results in several pointer pointing to the same instance!!
-    // _data_ptr_list.resize(_dl_len, std::make_shared<_T>()); // Note: initialized with all null pointers!!
-    _data_ptr_list.resize(0);
-    for (size_t i=0; i < _dl_len; ++i){
-        _data_ptr_list.emplace_back(new _T);
-    }
+    // Note: Any new instance is not working here, this results in several async_buffer in a vector pointing to the same instance set!!
+    // This is because the vector only construct the element once and coy it all over the place.
+    // To solve this problem, we simply let the pointer be null, and assign it value at runtime
+    _data_ptr_list.resize(_dl_len, nullptr); // Note: initialized with all null pointers!!
     #ifdef __DEGUG__
         // test, this should be
         std::cout << "_data_ptr_list.size() == _dl_len? " << (_data_ptr_list.size() == _dl_len) << "\n";
-        // test, this should be "1"
+        // test, this should be "0"
         std::cout << "_data_ptr_list[0].use_count() = " << _data_ptr_list[0].use_count() << "\n";
         //
     #endif
@@ -386,7 +384,7 @@ async_buffer<_T>::async_buffer(size_t buffer_length_in, _T place_holder_element)
     _copy_func(&_default_copy_func),
     //
     _empty_element(place_holder_element),
-    _tmp_output_ptr( std::make_shared<_T>(place_holder_element) )
+    _tmp_output_ptr(nullptr)
 {
     //------------------------------------------------//
     // A place_holder_element is supported at input
@@ -405,16 +403,14 @@ async_buffer<_T>::async_buffer(size_t buffer_length_in, _T place_holder_element)
     _dl_len = buffer_length_in + 1; // The _data_ptr_list should always contains an place wich is ready to be written, hence it will be larger than the buffer length.
     _stamp_list.resize(_dl_len);
 
-    // Note: the following one line is not working, this results in several pointer pointing to the same instance!!
-    // _data_ptr_list.resize(_dl_len, std::make_shared<_T>()); // Note: initialized with all null pointers!!
-    _data_ptr_list.resize(0);
-    for (size_t i=0; i < _dl_len; ++i){
-        _data_ptr_list.emplace_back(new _T(place_holder_element));
-    }
+    // Note: Any new instance is not working here, this results in several async_buffer in a vector pointing to the same instance set!!
+    // This is because the vector only construct the element once and coy it all over the place.
+    // To solve this problem, we simply let the pointer be null, and assign it value at runtime
+    _data_ptr_list.resize(_dl_len, nullptr); // Note: initialized with all null pointers!!
     #ifdef __DEGUG__
         // test, this should be
         std::cout << "_data_ptr_list.size() == _dl_len? " << (_data_ptr_list.size() == _dl_len) << "\n";
-        // test, this should be "1"
+        // test, this should be "0"
         std::cout << "_data_ptr_list[0].use_count() = " << _data_ptr_list[0].use_count() << "\n";
         //
     #endif
@@ -454,6 +450,13 @@ template <class _T> bool async_buffer<_T>::put(const _T & element_in, bool is_dr
         std::lock_guard<std::mutex> _lock(*_mlock_idx_write);
         _idx_write_tmp = _idx_write;
     }
+
+
+    // Fill the pointer!
+    if (!_data_ptr_list[_idx_write_tmp]){
+        _data_ptr_list[_idx_write_tmp].reset( new _T(_empty_element) );
+    }
+    //
 
     // Note: the copy method may not sussess if _T is "Mat" from opencv
     //       be sure to use IMG.clone() mwthod for putting an image in.
@@ -508,6 +511,12 @@ template <class _T> bool async_buffer<_T>::put(std::shared_ptr<_T> & element_in_
 
 
     //---------------------------------------------------------//
+    // Fill the pointer!
+    if (!_data_ptr_list[_idx_write_tmp]){
+        _data_ptr_list[_idx_write_tmp].reset( new _T(_empty_element) );
+    }
+    //
+
     // Note: the element_in_ptr is shure not to be an empty pointer
     // Pre-check: The input pointer should be pure (unique )
     if (!element_in_ptr.unique() ){ // Not unique
@@ -560,6 +569,16 @@ template <class _T> bool async_buffer<_T>::front(_T & content_out, bool is_popin
         std::lock_guard<std::mutex> _lock(*_mlock_idx_read);
         _idx_read_tmp = _idx_read;
     }
+
+
+    // Fill the pointer!
+    if (!_data_ptr_list[_idx_read_tmp]){
+        _data_ptr_list[_idx_read_tmp].reset( new _T(_empty_element) );
+    }
+    if (!_tmp_output_ptr){
+        _tmp_output_ptr.reset( new _T(_empty_element) );
+    }
+    //
 
     // pop?
     if(!is_poping){
@@ -622,6 +641,14 @@ template <class _T> bool async_buffer<_T>::front(std::shared_ptr<_T> & content_o
     }
 
 
+    // Fill the pointer!
+    if (!_data_ptr_list[_idx_read_tmp]){
+        _data_ptr_list[_idx_read_tmp].reset( new _T(_empty_element) );
+    }
+    if (!_tmp_output_ptr){
+        _tmp_output_ptr.reset( new _T(_empty_element) );
+    }
+    //
 
     // pop?
     if(!is_poping){

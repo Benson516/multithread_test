@@ -94,7 +94,13 @@ void chatter_prototype_CB(const std_msgs::String::ConstPtr& msg, string _topic_n
     // ROS_INFO("CB for [%s]: <%s>", _topic_name.c_str(), msg->data.c_str());
     string _tmp_s;
     _tmp_s = msg->data;
-    bool result = async_buffer_list[_topic_id].put( _tmp_s);
+
+    // Try pointer
+    std::shared_ptr<string> _tmp_s_ptr;
+    _tmp_s_ptr = std::make_shared<string>(_tmp_s);
+
+    // put
+    bool result = async_buffer_list[_topic_id].put( _tmp_s_ptr);
 
     if (!result){
         std::cout << _topic_name << ": buffer full.\n";
@@ -262,18 +268,19 @@ int main(int argc, char **argv)
           }
       }
       */
-      vector<string> str_out_list(topic_names.size());
+
       for (size_t i=0; i < topic_names.size(); ++i){
           std::cout << topic_names[i] << ": ";
           std::cout << "(pre)buff_size = " << async_buffer_list[i].size_est() << " ";
-
-          if (async_buffer_list[i].front(str_out_list[i], true)){
+          string str_out;
+          std::shared_ptr<string> str_ptr;
+          if (async_buffer_list[i].front(str_ptr, true)){
+              str_out = *str_ptr;
               // std::cout << "(post)buff_size = " << async_buffer_list[i].size_est() << " ";
-              std::cout << "\tmsg: <" << str_out_list[i] << ">\t";
+              std::cout << "\tmsg: <" << str_out << ">\t";
               // std::cout << "pop: " << async_buffer_list[i].pop();
 
               // Check for counts
-              string str_out = str_out_list[i];
               size_t idx_key = str_out.rfind(key_word);
               int count = std::stoi(str_out.substr(idx_key+8), 0);
               // std::cout << "count = " << count;
