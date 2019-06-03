@@ -13,7 +13,8 @@
 #include <boost/bind.hpp>
 
 // async_buffer
-#include <async_buffer.hpp>
+// #include <async_buffer.hpp>
+#include <async_buffer_v2.hpp>
 // #include "async_buffer.hpp"
 //
 
@@ -265,15 +266,15 @@ int main(int argc, char **argv)
       for (size_t i=0; i < topic_names.size(); ++i){
           std::cout << topic_names[i] << ": ";
           std::cout << "(pre)buff_size = " << async_buffer_list[i].size_est() << " ";
-          std::pair<string,bool> _result_pair = async_buffer_list[i].front(true);
-          if (_result_pair.second){
+          string str_out;
+          if (async_buffer_list[i].front(str_out, true)){
               // std::cout << "(post)buff_size = " << async_buffer_list[i].size_est() << " ";
-              std::cout << "\tmsg: <" << _result_pair.first << ">\t";
+              std::cout << "\tmsg: <" << str_out << ">\t";
               // std::cout << "pop: " << async_buffer_list[i].pop();
 
               // Check for counts
-              size_t idx_key = _result_pair.first.rfind(key_word);
-              int count = std::stoi(_result_pair.first.substr(idx_key+8), 0);
+              size_t idx_key = str_out.rfind(key_word);
+              int count = std::stoi(str_out.substr(idx_key+8), 0);
               // std::cout << "count = " << count;
               int count_increment = count - count_in_msg_list[i];
               if ( count_increment != 1 ){

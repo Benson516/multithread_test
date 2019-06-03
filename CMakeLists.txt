@@ -100,10 +100,11 @@ add_library (async_buffer STATIC include/async_buffer/async_buffer.cpp)
 # target_link_libraries(async_buffer ${ALL_LIBS}  )
 
 add_library (async_buffer_v2 STATIC include/async_buffer/async_buffer_v2.cpp)
-# target_link_libraries(async_buffer_v2 ${ALL_LIBS}  )  
+# target_link_libraries(async_buffer_v2 ${ALL_LIBS}  )
 
 add_library (ROS_interface STATIC include/ROS_interface/ROS_interface.cpp)
-target_link_libraries(ROS_interface async_buffer)
+# target_link_libraries(ROS_interface async_buffer)
+target_link_libraries(ROS_interface async_buffer_v2)
 
 
 add_executable(talker src/talker.cpp)
@@ -116,7 +117,8 @@ add_executable(listener_async_spinner src/listener_async_spinner.cpp)
 target_link_libraries(listener_async_spinner ${catkin_LIBRARIES})
 
 add_executable(listener_async_spinner_async_buffer src/listener_async_spinner_async_buffer.cpp )
-target_link_libraries(listener_async_spinner_async_buffer ${catkin_LIBRARIES} async_buffer)
+# target_link_libraries(listener_async_spinner_async_buffer ${catkin_LIBRARIES} async_buffer)
+target_link_libraries(listener_async_spinner_async_buffer ${catkin_LIBRARIES} async_buffer_v2)
 
 #
 add_executable(listener_ROS_interface src/listener_ROS_interface.cpp )

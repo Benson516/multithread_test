@@ -44,7 +44,8 @@
 #include <time.h>
 using namespace cv;
 // The SPSC non-blocking buffer
-#include <async_buffer.hpp>
+// #include <async_buffer.hpp>
+#include <async_buffer_v2.hpp>
 
 
 // Boost
