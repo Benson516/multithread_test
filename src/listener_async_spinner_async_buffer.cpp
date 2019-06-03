@@ -236,7 +236,7 @@ int main(int argc, char **argv)
 
 
   // ros::waitForShutdown();
-  double _loop_rate = 2.0; //1.0;
+  double _loop_rate = 1.0; // 2.0; //1.0;
   long long loop_time_ms = (long long)(1000.0/_loop_rate); // ms
   ros::Rate loop_rate_obj( 1000.0/float(loop_time_ms) ); // Hz
   //
@@ -262,17 +262,18 @@ int main(int argc, char **argv)
           }
       }
       */
-
+      vector<string> str_out_list(topic_names.size());
       for (size_t i=0; i < topic_names.size(); ++i){
           std::cout << topic_names[i] << ": ";
           std::cout << "(pre)buff_size = " << async_buffer_list[i].size_est() << " ";
-          string str_out;
-          if (async_buffer_list[i].front(str_out, true)){
+
+          if (async_buffer_list[i].front(str_out_list[i], true)){
               // std::cout << "(post)buff_size = " << async_buffer_list[i].size_est() << " ";
-              std::cout << "\tmsg: <" << str_out << ">\t";
+              std::cout << "\tmsg: <" << str_out_list[i] << ">\t";
               // std::cout << "pop: " << async_buffer_list[i].pop();
 
               // Check for counts
+              string str_out = str_out_list[i];
               size_t idx_key = str_out.rfind(key_word);
               int count = std::stoi(str_out.substr(idx_key+8), 0);
               // std::cout << "count = " << count;

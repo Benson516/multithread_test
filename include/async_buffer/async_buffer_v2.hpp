@@ -2,7 +2,7 @@
 #define ASYNC_BUFFER_V2_H
 
 // Determine if we are going to preint some debug information to std_out
-// #define __DEGUG__
+#define __DEGUG__
 
 /*
 This is a class that implement a single-producer-single-consumer (SPSC) queue.
@@ -342,7 +342,9 @@ async_buffer<_T>::async_buffer(size_t buffer_length_in):
     _mlock_write_block(new std::mutex()),
     _mlock_read_block(new std::mutex()),
     //
-    _copy_func(&_default_copy_func)
+    _copy_func(&_default_copy_func),
+    _empty_element(),
+    _tmp_output_ptr( new _T )
 {
     // The size is equals to mod(_idx_write - _idx_read, _dl_len)
     // If two indexes are identical, it means that the buffer is empty.
@@ -359,8 +361,20 @@ async_buffer<_T>::async_buffer(size_t buffer_length_in):
     */
     _dl_len = buffer_length_in + 1; // The _data_ptr_list should always contains an place wich is ready to be written, hence it will be larger than the buffer length.
     _stamp_list.resize(_dl_len);
-    _data_ptr_list.resize(_dl_len, nullptr); // Note: initialized with all null pointers!!
 
+    // Note: the following one line is not working, this results in several pointer pointing to the same instance!!
+    // _data_ptr_list.resize(_dl_len, std::make_shared<_T>()); // Note: initialized with all null pointers!!
+    _data_ptr_list.resize(0);
+    for (size_t i=0; i < _dl_len; ++i){
+        _data_ptr_list.emplace_back(new _T);
+    }
+    #ifdef __DEGUG__
+        // test, this should be
+        std::cout << "_data_ptr_list.size() == _dl_len? " << (_data_ptr_list.size() == _dl_len) << "\n";
+        // test, this should be "1"
+        std::cout << "_data_ptr_list[0].use_count() = " << _data_ptr_list[0].use_count() << "\n";
+        //
+    #endif
 }
 template <class _T>
 async_buffer<_T>::async_buffer(size_t buffer_length_in, _T place_holder_element):
@@ -390,14 +404,20 @@ async_buffer<_T>::async_buffer(size_t buffer_length_in, _T place_holder_element)
     // However, specifying "0" will not cause any error
     _dl_len = buffer_length_in + 1; // The _data_ptr_list should always contains an place wich is ready to be written, hence it will be larger than the buffer length.
     _stamp_list.resize(_dl_len);
-    // _data_ptr_list.resize(_dl_len, place_holder_element);
-    _data_ptr_list.resize(_dl_len, std::make_shared<_T> (place_holder_element)); // Note: initialized with instances similar to place_holder_element (but not the same instance!!).
 
-#ifdef __DEGUG__
-    // test, this should be "1"
-    std::cout << "_data_ptr_list[0].use_count() = " << _data_ptr_list[0].use_count() << "\n";
-    //
-#endif
+    // Note: the following one line is not working, this results in several pointer pointing to the same instance!!
+    // _data_ptr_list.resize(_dl_len, std::make_shared<_T>()); // Note: initialized with all null pointers!!
+    _data_ptr_list.resize(0);
+    for (size_t i=0; i < _dl_len; ++i){
+        _data_ptr_list.emplace_back(new _T(place_holder_element));
+    }
+    #ifdef __DEGUG__
+        // test, this should be
+        std::cout << "_data_ptr_list.size() == _dl_len? " << (_data_ptr_list.size() == _dl_len) << "\n";
+        // test, this should be "1"
+        std::cout << "_data_ptr_list[0].use_count() = " << _data_ptr_list[0].use_count() << "\n";
+        //
+    #endif
 }
 
 
@@ -439,6 +459,7 @@ template <class _T> bool async_buffer<_T>::put(const _T & element_in, bool is_dr
     //       be sure to use IMG.clone() mwthod for putting an image in.
     _copy_func(*_data_ptr_list[_idx_write_tmp], element_in); // *ptr <-- instance
 
+
     // Note: the following function already got a lock,
     // don't use the same lock recursively
     _set_index_write( _increase_idx(_idx_write_tmp) );
@@ -452,8 +473,17 @@ template <class _T> bool async_buffer<_T>::put(std::shared_ptr<_T> & element_in_
     //-------------------------------------------------------//
 
 
+
     // To put an element into the buffer
     bool _all_is_well = true;
+
+    // The input is an empty pointer, return immediatly.
+    if (!element_in_ptr){
+        _all_is_well = false;
+        return false;
+    }
+
+    // Check if the buffer is full
     if (_is_full()){
         //
         if (is_droping){
@@ -478,8 +508,9 @@ template <class _T> bool async_buffer<_T>::put(std::shared_ptr<_T> & element_in_
 
 
     //---------------------------------------------------------//
-    // Pre-check: The input pointer should be pure (unique or empty)
-    if (element_in_ptr && !element_in_ptr.unique() ){ // Not null and not unique
+    // Note: the element_in_ptr is shure not to be an empty pointer
+    // Pre-check: The input pointer should be pure (unique )
+    if (!element_in_ptr.unique() ){ // Not unique
         // Copy element
         // Note: the copy method may not sussess if _T is "Mat" from opencv
         //       be sure to use IMG.clone() mwthod for putting an image in.
@@ -493,8 +524,8 @@ template <class _T> bool async_buffer<_T>::put(std::shared_ptr<_T> & element_in_
         _data_ptr_list[_idx_write_tmp].swap(element_in_ptr);
 
         // Post-check: the output pointer should be pure (unique or empty)
-        if (element_in_ptr && !element_in_ptr.unique() ){ // Not null and not unique
-            element_in_ptr.reset(); // Reset the pointer to make it clean.
+        if (!element_in_ptr.unique() ){ // Not not unique (empty or shared)
+            element_in_ptr.reset(new _T(_empty_element)); // Reset the pointer to make it clean.
 #ifdef __DEGUG__
             std::cout << "[put] container pointer is not pure.";
 #endif
@@ -590,6 +621,8 @@ template <class _T> bool async_buffer<_T>::front(std::shared_ptr<_T> & content_o
         _idx_read_tmp = _idx_read;
     }
 
+
+
     // pop?
     if(!is_poping){
         if (_got_front_but_no_pop){
@@ -611,26 +644,30 @@ template <class _T> bool async_buffer<_T>::front(std::shared_ptr<_T> & content_o
         // We need to exchange the data first before we move the index (delete)
 
         //---------------------------------------------------------//
+        // Check if the content_out_ptr is null
+        if (!content_out_ptr){
+            content_out_ptr.reset( new _T(_empty_element) );
+        }
         // Pre-check: The input pointer should be pure (unique or empty)
         if (_data_ptr_list[_idx_read_tmp] && !_data_ptr_list[_idx_read_tmp].unique() ){ // Not null and not unique
             // Copy element
             // Note: the copy method may not sussess if _T is "Mat" from opencv
             //       be sure to use IMG.clone() mwthod for putting an image in.
             _copy_func(*content_out_ptr, *_data_ptr_list[_idx_read_tmp]); // *ptr <-- *ptr
-    #ifdef __DEGUG__
+#ifdef __DEGUG__
             std::cout << "[front pop] buffer pointer is not pure.";
-    #endif
+#endif
         }else{
             // The input pointer is pure (unique or null)
             // swapping
             content_out_ptr.swap(_data_ptr_list[_idx_read_tmp]);
 
-            // Post-check: the output pointer should be pure (unique or empty)
-            if (_data_ptr_list[_idx_read_tmp] && !_data_ptr_list[_idx_read_tmp].unique() ){ // Not null and not unique
-                _data_ptr_list[_idx_read_tmp].reset(); // Reset the pointer to make it clean.
-    #ifdef __DEGUG__
+            // Post-check: the output pointer should be unique (not empty and not shared)
+            if (!_data_ptr_list[_idx_read_tmp].unique() ){ // Not null and not unique
+                _data_ptr_list[_idx_read_tmp].reset( new _T(_empty_element) ); // Reset the pointer to make it clean.
+#ifdef __DEGUG__
                 std::cout << "[front pop] output container pointer is not pure.";
-    #endif
+#endif
             }
             //
         }
