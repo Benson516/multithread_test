@@ -129,7 +129,7 @@ int main(int argc, char **argv)
     double _loop_rate = 100.0; // 2.0; //1.0;
     long long loop_time_ms = (long long)(1000.0/_loop_rate); // ms
     //
-    auto start_old = std::chrono::high_resolution_clock::now();;
+    auto start_old = std::chrono::high_resolution_clock::now();
     while(ros_interface.is_running()){
         //
         auto start = std::chrono::high_resolution_clock::now();
