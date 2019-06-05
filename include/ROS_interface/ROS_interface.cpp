@@ -352,6 +352,13 @@ bool ROS_INTERFACE::get_Image(const int topic_id, cv::Mat & content_out){
     //------------------------------------//
     return ( buffer_list_Image[_tid].front(content_out, true) );
 }
+bool ROS_INTERFACE::get_Image(const int topic_id, std::shared_ptr<cv::Mat> & content_out_ptr){
+    // Type_id
+    //------------------------------------//
+    int _tid = _topic_tid_list[topic_id];
+    //------------------------------------//
+    return ( buffer_list_Image[_tid].front(content_out_ptr, true) );
+}
 // output
 bool ROS_INTERFACE::send_Image(const int topic_id, const cv::Mat &content_in){
     // pub_subs_id

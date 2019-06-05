@@ -111,6 +111,7 @@ public:
     //---------------------------------------------------------//
     bool get_String(const int topic_id, std::string & content_out);
     bool get_Image(const int topic_id, cv::Mat & content_out);
+    bool get_Image(const int topic_id, std::shared_ptr<cv::Mat> & content_out_ptr);
     bool get_ITRIPointCloud(const int topic_id, pcl::PointCloud<pcl::PointXYZI> & content_out);
     bool get_ITRIPointCloud(const int topic_id, std::shared_ptr< pcl::PointCloud<pcl::PointXYZI> > & content_out_ptr);
     //---------------------------------------------------------//
