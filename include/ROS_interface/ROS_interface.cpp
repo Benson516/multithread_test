@@ -6,6 +6,18 @@
 
 
 // Constructors
+ROS_INTERFACE::ROS_INTERFACE():
+    _is_started(false),
+    _num_topics(0),
+    _msg_type_2_topic_params( size_t(MSG::M_TYPE::NUM_MSG_TYPE) )
+    // The temporary containers
+    // _cloud_tmp_ptr (new pcl::PointCloud<pcl::PointXYZI>)
+{
+    //
+    _num_ros_cb_thread = 6; // Use 6 threads
+    //
+    // ros::init(argc, argv, "ROS_interface", ros::init_options::AnonymousName);
+}
 ROS_INTERFACE::ROS_INTERFACE(int argc, char **argv):
     _is_started(false),
     _num_topics(0),
@@ -27,6 +39,11 @@ ROS_INTERFACE::~ROS_INTERFACE(){
 
 
 
+
+bool ROS_INTERFACE::setup_node(int argc, char **argv, std::string node_name_in){
+    ros::init(argc, argv, node_name_in.c_str(), ros::init_options::AnonymousName);
+    return true;
+}
 // Setting up topics
 //----------------------------------------------------------------//
 // Method 1: use add_a_topic to add a single topic one at a time

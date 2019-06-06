@@ -93,8 +93,11 @@ class ROS_INTERFACE{
 
 public:
     // Constructors
+    ROS_INTERFACE();
     ROS_INTERFACE(int argc, char **argv);
     ~ROS_INTERFACE();
+    //
+    bool setup_node(int argc, char **argv, std::string node_name_in=std::string("ROS_interface"));
     // Setting up topics
     // Method 1: use add_a_topic to add a single topic one at a time
     // Method 2: use load_topics to load all topics
